@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
     `java-library`
     `maven-publish`
+    id("org.jetbrains.dokka") version "2.1.0"
 }
 
 group = "com.github.fenrur"

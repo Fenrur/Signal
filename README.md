@@ -1,5 +1,7 @@
 # Signal
 
+[![](https://jitpack.io/v/fenrur/signal.svg)](https://jitpack.io/#fenrur/signal)
+
 A reactive state management library for Kotlin, inspired by SolidJS signals and Kotlin StateFlow.
 
 ## Installation
