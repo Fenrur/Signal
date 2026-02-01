@@ -41,7 +41,7 @@ fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowSignal(initial)
 fun <T> bindableMutableSignalOf(
     initialSignal: MutableSignal<T>? = null,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = BindableMutableSignal(initialSignal, takeOwnership)
+): BindableMutableSignal<T> = DefaultBindableMutableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [BindableMutableSignal] with an initial value.
@@ -55,7 +55,7 @@ fun <T> bindableMutableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = BindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
+): BindableMutableSignal<T> = DefaultBindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
 
 /**
  * Creates a read-only view of a [MutableSignal].

@@ -1,5 +1,6 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.BindableMutableSignal
 import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.SubscribeListener
@@ -9,11 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [MutableSignal] that binds to another MutableSignal.
- *
- * This signal acts as a proxy to another signal, allowing you to:
- * - Switch the underlying signal at runtime
- * - Optionally take ownership of bound signals (closing them when this signal closes)
+ * Default implementation of [BindableMutableSignal].
  *
  * Thread-safety: All operations are thread-safe.
  *
@@ -21,10 +18,10 @@ import java.util.concurrent.atomic.AtomicReference
  * @param initial optional initial signal to bind to
  * @param takeOwnership if true, closes bound signals when unbinding or closing
  */
-class BindableMutableSignal<T>(
+class DefaultBindableMutableSignal<T>(
     initial: MutableSignal<T>? = null,
     private val takeOwnership: Boolean = false
-) : MutableSignal<T> {
+) : BindableMutableSignal<T> {
 
     private data class Data<T>(val signal: MutableSignal<T>, val unSubscriber: UnSubscriber)
 
@@ -78,16 +75,7 @@ class BindableMutableSignal<T>(
         }
     }
 
-    /**
-     * Binds this signal to a new underlying signal.
-     *
-     * - Unsubscribes from the previous signal
-     * - If [takeOwnership] is true, closes the previous signal
-     * - Subscribes to the new signal and notifies listeners
-     *
-     * @param newSignal the new signal to bind to
-     */
-    fun bindTo(newSignal: MutableSignal<T>) {
+    override fun bindTo(newSignal: MutableSignal<T>) {
         if (isClosed) return
 
         val unSub = newSignal.subscribe { either ->
@@ -117,17 +105,9 @@ class BindableMutableSignal<T>(
         }
     }
 
-    /**
-     * Returns the currently bound signal.
-     *
-     * @return the bound signal, or null if not bound
-     */
-    fun currentSignal(): MutableSignal<T>? = data.get()?.signal
+    override fun currentSignal(): MutableSignal<T>? = data.get()?.signal
 
-    /**
-     * Returns true if this signal is currently bound to another signal.
-     */
-    fun isBound(): Boolean = data.get() != null
+    override fun isBound(): Boolean = data.get() != null
 
     private fun currentSignalOrThrow(): MutableSignal<T> =
         data.get()?.signal ?: throw IllegalStateException("BindableMutableSignal is not bound")
@@ -138,6 +118,6 @@ class BindableMutableSignal<T>(
         } catch (_: IllegalStateException) {
             "<not bound>"
         }
-        return "BindableMutableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
+        return "DefaultBindableMutableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
     }
 }
