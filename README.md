@@ -127,13 +127,13 @@ val constant: Signal<String> = signalOf("Hello")
 val flowSignal = publisher.asSignal(initialValue)
 ```
 
-### BindedSignal
+### BindableMutableSignal
 
-A `BindedSignal` is a signal that acts as a proxy to another signal. It allows you to switch the underlying signal at runtime.
+A `BindableMutableSignal` is a signal that acts as a proxy to another signal. It allows you to switch the underlying signal at runtime.
 
 ```kotlin
 // Create an unbound signal
-val binded = bindedSignalOf<Int>()
+val binded = bindableMutableSignalOf<Int>()
 
 // Bind to a source signal
 val source1 = mutableSignalOf(10)
@@ -150,7 +150,7 @@ binded.bindTo(source2)
 println(binded.value) // 100
 
 // Create with initial binding
-val binded2 = bindedSignalOf(mutableSignalOf(42))
+val binded2 = bindableMutableSignalOf(mutableSignalOf(42))
 println(binded2.value) // 42
 
 // Check binding state
@@ -162,7 +162,7 @@ With ownership:
 
 ```kotlin
 // Take ownership: closes previous signals when rebinding or closing
-val binded = bindedSignalOf<Int>(takeOwnership = true)
+val binded = bindableMutableSignalOf<Int>(takeOwnership = true)
 
 val source1 = mutableSignalOf(1)
 binded.bindTo(source1)

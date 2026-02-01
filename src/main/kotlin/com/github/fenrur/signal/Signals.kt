@@ -32,16 +32,16 @@ fun <T> signalOf(initial: T): Signal<T> = ReadOnlySignal(initial)
 fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowSignal(initial)
 
 /**
- * Creates a [BindedSignal] optionally bound to an initial signal.
+ * Creates a [BindableMutableSignal] optionally bound to an initial signal.
  *
  * @param initial optional initial signal to bind to
  * @param takeOwnership if true, closes bound signals when unbinding
- * @return a BindedSignal
+ * @return a BindableMutableSignal
  */
-fun <T> bindedSignalOf(
+fun <T> bindableMutableSignalOf(
     initial: MutableSignal<T>? = null,
     takeOwnership: Boolean = false
-): BindedSignal<T> = BindedSignal(initial, takeOwnership)
+): BindableMutableSignal<T> = BindableMutableSignal(initial, takeOwnership)
 
 /**
  * Creates a read-only view of a [MutableSignal].

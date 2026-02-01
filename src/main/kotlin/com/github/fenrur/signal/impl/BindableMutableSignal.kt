@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @param initial optional initial signal to bind to
  * @param takeOwnership if true, closes bound signals when unbinding or closing
  */
-class BindedSignal<T>(
+class BindableMutableSignal<T>(
     initial: MutableSignal<T>? = null,
     private val takeOwnership: Boolean = false
 ) : MutableSignal<T> {
@@ -130,7 +130,7 @@ class BindedSignal<T>(
     fun isBound(): Boolean = data.get() != null
 
     private fun currentSignalOrThrow(): MutableSignal<T> =
-        data.get()?.signal ?: throw IllegalStateException("BindedSignal is not bound")
+        data.get()?.signal ?: throw IllegalStateException("BindableMutableSignal is not bound")
 
     override fun toString(): String {
         val boundValue = try {
@@ -138,6 +138,6 @@ class BindedSignal<T>(
         } catch (_: IllegalStateException) {
             "<not bound>"
         }
-        return "BindedSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
+        return "BindableMutableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
     }
 }
