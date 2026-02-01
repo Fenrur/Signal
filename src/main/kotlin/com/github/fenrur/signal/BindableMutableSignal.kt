@@ -33,4 +33,30 @@ interface BindableMutableSignal<T> : MutableSignal<T> {
      * Returns true if this signal is currently bound to another signal.
      */
     fun isBound(): Boolean
+
+    companion object {
+        /**
+         * Checks if binding [source] to [target] would create a circular reference.
+         *
+         * A circular reference occurs when [target] is already bound (directly or indirectly) to [source].
+         *
+         * @param source the signal that would be bound to [target]
+         * @param target the signal that [source] would bind to
+         * @return true if binding would create a cycle, false otherwise
+         */
+        fun <T> wouldCreateCycle(source: BindableMutableSignal<T>, target: MutableSignal<T>): Boolean {
+            val visited = mutableSetOf<MutableSignal<*>>()
+            visited.add(source)
+
+            var current: MutableSignal<*>? = target
+            while (current != null) {
+                if (current in visited) {
+                    return true
+                }
+                visited.add(current)
+                current = (current as? BindableMutableSignal<*>)?.currentSignal()
+            }
+            return false
+        }
+    }
 }
