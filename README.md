@@ -129,49 +129,98 @@ val flowSignal = publisher.asSignal(initialValue)
 
 ### BindableMutableSignal
 
-A `BindableMutableSignal` is a signal that acts as a proxy to another signal. It allows you to switch the underlying signal at runtime.
+A `BindableMutableSignal<T>` is an interface that acts as a proxy to another `MutableSignal`. It allows you to dynamically switch the underlying signal at runtime while maintaining subscriptions.
+
+#### Basic Usage
 
 ```kotlin
 // Create an unbound signal
-val binded = bindableMutableSignalOf<Int>()
+val bindable = bindableMutableSignalOf<Int>()
+println(bindable.isBound()) // false
 
 // Bind to a source signal
 val source1 = mutableSignalOf(10)
-binded.bindTo(source1)
-println(binded.value) // 10
+bindable.bindTo(source1)
+println(bindable.value) // 10
 
-// Read and write through the binded signal
-binded.value = 20
-println(source1.value) // 20
+// Read and write through the bindable signal
+bindable.value = 20
+println(source1.value) // 20 - changes propagate to source
 
 // Switch to a different source
 val source2 = mutableSignalOf(100)
-binded.bindTo(source2)
-println(binded.value) // 100
+bindable.bindTo(source2)
+println(bindable.value) // 100
 
-// Create with initial binding
-val binded2 = bindableMutableSignalOf(mutableSignalOf(42))
-println(binded2.value) // 42
-
-// Check binding state
-println(binded.isBound())        // true
-println(binded.currentSignal())  // the current source signal
+// Subscribers are automatically notified of the new value
+bindable.subscribe { either ->
+    either.onRight { println("Value: $it") }
+}
 ```
 
-With ownership:
+#### Factory Functions
 
 ```kotlin
-// Take ownership: closes previous signals when rebinding or closing
-val binded = bindableMutableSignalOf<Int>(takeOwnership = true)
+// Create unbound (throws on value access until bound)
+val unbound = bindableMutableSignalOf<String>()
+
+// Create with initial signal binding
+val withSignal = bindableMutableSignalOf(mutableSignalOf(42))
+println(withSignal.value) // 42
+
+// Create with initial value (creates internal signal automatically)
+val withValue = bindableMutableSignalOf(initialValue = "Hello")
+println(withValue.value) // "Hello"
+
+// Check binding state
+println(withSignal.isBound())        // true
+println(withSignal.currentSignal())  // returns the bound MutableSignal
+```
+
+#### Ownership Mode
+
+When `takeOwnership = true`, the bindable signal takes ownership of bound signals and closes them automatically:
+
+```kotlin
+val bindable = bindableMutableSignalOf<Int>(takeOwnership = true)
 
 val source1 = mutableSignalOf(1)
-binded.bindTo(source1)
+bindable.bindTo(source1)
+println(source1.isClosed) // false
 
 val source2 = mutableSignalOf(2)
-binded.bindTo(source2)  // source1 is automatically closed
+bindable.bindTo(source2)
+println(source1.isClosed) // true - automatically closed on rebind
 
-binded.close()  // source2 is also closed
+bindable.close()
+println(source2.isClosed) // true - closed when bindable closes
 ```
+
+#### Circular Binding Detection
+
+The library automatically detects and prevents circular bindings that would cause infinite loops:
+
+```kotlin
+val a = bindableMutableSignalOf(1)
+val b = bindableMutableSignalOf(2)
+val c = bindableMutableSignalOf(3)
+
+a.bindTo(b)
+b.bindTo(c)
+
+// This would create a cycle: a -> b -> c -> a
+c.bindTo(a) // Throws IllegalStateException: "Circular binding detected"
+
+// You can check for cycles before binding
+if (!BindableMutableSignal.wouldCreateCycle(c, a)) {
+    c.bindTo(a)
+}
+```
+
+The `wouldCreateCycle` function traverses the binding chain to detect:
+- Direct self-binding (`a.bindTo(a)`)
+- Simple cycles (`a -> b -> a`)
+- Chain cycles (`a -> b -> c -> a`)
 
 ## Operators
 
