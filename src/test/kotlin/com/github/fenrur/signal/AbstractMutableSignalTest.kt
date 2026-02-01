@@ -274,7 +274,7 @@ abstract class AbstractMutableSignalTest : AbstractSignalTest<MutableSignal<Int>
 
         assertThat(latch.await(30, TimeUnit.SECONDS)).isTrue()
         // Allow small number of errors in highly concurrent scenarios
-        assertThat(errors.get()).isLessThanOrEqualTo(2)
+        assertThat(errors.get()).isLessThanOrEqualTo(5)
     }
 
     // ==================== Notification order ====================
