@@ -1,7 +1,9 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.AbstractMutableSignalTest
+import com.github.fenrur.signal.BindableMutableSignal
 import com.github.fenrur.signal.MutableSignal
+import com.github.fenrur.signal.bindableMutableSignalOf
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -167,5 +169,110 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
         signal.update { it + 5 }
 
         assertThat(source.value).isEqualTo(15)
+    }
+
+    // ==================== Circular binding detection tests ====================
+
+    @Test
+    fun `wouldCreateCycle returns false for non-circular binding`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(a, b)).isFalse()
+    }
+
+    @Test
+    fun `wouldCreateCycle returns true for direct self-binding`() {
+        val a = bindableMutableSignalOf(1)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(a, a)).isTrue()
+    }
+
+    @Test
+    fun `wouldCreateCycle returns true for simple cycle A to B to A`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+
+        a.bindTo(b)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(b, a)).isTrue()
+    }
+
+    @Test
+    fun `wouldCreateCycle returns true for chain cycle A to B to C to A`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+        val c = bindableMutableSignalOf(3)
+
+        a.bindTo(b)
+        b.bindTo(c)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(c, a)).isTrue()
+    }
+
+    @Test
+    fun `wouldCreateCycle returns false for valid chain`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+        val c = bindableMutableSignalOf(3)
+
+        a.bindTo(b)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(c, a)).isFalse()
+    }
+
+    @Test
+    fun `wouldCreateCycle returns false when target is regular MutableSignal`() {
+        val a = bindableMutableSignalOf(1)
+        val b = CowSignal(2)
+
+        assertThat(BindableMutableSignal.wouldCreateCycle(a, b)).isFalse()
+    }
+
+    @Test
+    fun `bindTo throws on direct self-binding`() {
+        val a = bindableMutableSignalOf(1)
+
+        assertThatThrownBy { a.bindTo(a) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Circular binding detected")
+    }
+
+    @Test
+    fun `bindTo throws on simple cycle`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+
+        a.bindTo(b)
+
+        assertThatThrownBy { b.bindTo(a) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Circular binding detected")
+    }
+
+    @Test
+    fun `bindTo throws on chain cycle`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+        val c = bindableMutableSignalOf(3)
+
+        a.bindTo(b)
+        b.bindTo(c)
+
+        assertThatThrownBy { c.bindTo(a) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Circular binding detected")
+    }
+
+    @Test
+    fun `bindTo allows valid rebinding without cycle`() {
+        val a = bindableMutableSignalOf(1)
+        val b = bindableMutableSignalOf(2)
+        val c = bindableMutableSignalOf(3)
+
+        a.bindTo(b)
+        a.bindTo(c) // rebind a to c, no cycle
+
+        assertThat(a.value).isEqualTo(3)
     }
 }
