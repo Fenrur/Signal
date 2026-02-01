@@ -43,6 +43,15 @@ fun <T> bindableMutableSignalOf(
     takeOwnership: Boolean = false
 ): BindableMutableSignal<T> = BindableMutableSignal(initialSignal, takeOwnership)
 
+/**
+ * Creates a [BindableMutableSignal] with an initial value.
+ *
+ * This is a convenience overload that creates an internal [MutableSignal] from the provided value.
+ *
+ * @param initialValue the initial value for the signal
+ * @param takeOwnership if true, closes bound signals when unbinding
+ * @return a BindableMutableSignal initialized with the given value
+ */
 fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
