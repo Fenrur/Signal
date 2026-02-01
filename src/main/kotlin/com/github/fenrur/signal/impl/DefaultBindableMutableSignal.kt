@@ -78,6 +78,10 @@ class DefaultBindableMutableSignal<T>(
     override fun bindTo(newSignal: MutableSignal<T>) {
         if (isClosed) return
 
+        if (BindableMutableSignal.wouldCreateCycle(this, newSignal)) {
+            throw IllegalStateException("Circular binding detected: binding would create a cycle")
+        }
+
         val unSub = newSignal.subscribe { either ->
             if (isClosed) return@subscribe
             either.fold(
