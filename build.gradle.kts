@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.fenrur"
-version = "1.0.0"
+version = System.getenv("VERSION") ?: "1.0.0"
 
 repositories {
     mavenCentral()
