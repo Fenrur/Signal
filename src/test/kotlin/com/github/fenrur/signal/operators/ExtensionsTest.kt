@@ -107,6 +107,172 @@ class ExtensionsTest {
         assertThat(values).containsExactly(40, 30)
     }
 
+    // ==================== bimap ====================
+
+    @Test
+    fun `bimap reads with forward transform`() {
+        val source = mutableSignalOf("42")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        assertThat(mapped.value).isEqualTo(42)
+    }
+
+    @Test
+    fun `bimap writes with reverse transform`() {
+        val source = mutableSignalOf("42")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        mapped.value = 100
+        assertThat(source.value).isEqualTo("100")
+        assertThat(mapped.value).isEqualTo(100)
+    }
+
+    @Test
+    fun `bimap update applies both transforms`() {
+        val source = mutableSignalOf("10")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        mapped.update { it + 5 }
+        assertThat(source.value).isEqualTo("15")
+        assertThat(mapped.value).isEqualTo(15)
+    }
+
+    @Test
+    fun `bimap notifies subscribers on source change`() {
+        val source = mutableSignalOf("1")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+        val values = CopyOnWriteArrayList<Int>()
+
+        mapped.subscribe { it.onRight { v -> values.add(v) } }
+
+        source.value = "2"
+        source.value = "3"
+
+        assertThat(values).containsExactly(1, 2, 3)
+    }
+
+    @Test
+    fun `bimap notifies subscribers on mapped write`() {
+        val source = mutableSignalOf("1")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+        val values = CopyOnWriteArrayList<Int>()
+
+        mapped.subscribe { it.onRight { v -> values.add(v) } }
+
+        mapped.value = 10
+        mapped.value = 20
+
+        assertThat(values).containsExactly(1, 10, 20)
+    }
+
+    @Test
+    fun `bimap close stops notifications`() {
+        val source = mutableSignalOf("1")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+        val values = CopyOnWriteArrayList<Int>()
+
+        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.close()
+
+        source.value = "99"
+
+        assertThat(mapped.isClosed).isTrue()
+        assertThat(values).containsExactly(1) // Only initial value
+    }
+
+    @Test
+    fun `bimap write on closed signal does nothing`() {
+        val source = mutableSignalOf("1")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        mapped.close()
+        mapped.value = 99
+
+        assertThat(source.value).isEqualTo("1")
+    }
+
+    @Test
+    fun `bimap update on closed signal does nothing`() {
+        val source = mutableSignalOf("1")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        mapped.close()
+        mapped.update { it + 100 }
+
+        assertThat(source.value).isEqualTo("1")
+    }
+
+    @Test
+    fun `bimap can be used as property delegate`() {
+        val source = mutableSignalOf("5")
+        val mapped = source.bimap(
+            forward = { it.toInt() },
+            reverse = { it.toString() }
+        )
+
+        var prop by mapped
+        assertThat(prop).isEqualTo(5)
+
+        prop = 42
+        assertThat(source.value).isEqualTo("42")
+    }
+
+    @Test
+    fun `bimap chaining works`() {
+        val source = mutableSignalOf(10)
+        val doubled = source.bimap(
+            forward = { it * 2 },
+            reverse = { it / 2 }
+        )
+        val asString = doubled.bimap(
+            forward = { it.toString() },
+            reverse = { it.toInt() }
+        )
+
+        assertThat(asString.value).isEqualTo("20")
+
+        asString.value = "100"
+        assertThat(doubled.value).isEqualTo(100)
+        assertThat(source.value).isEqualTo(50)
+    }
+
+    @Test
+    fun `bimap with identity transforms is pass-through`() {
+        val source = mutableSignalOf(42)
+        val identity = source.bimap(
+            forward = { it },
+            reverse = { it }
+        )
+
+        assertThat(identity.value).isEqualTo(42)
+        identity.value = 100
+        assertThat(source.value).isEqualTo(100)
+    }
+
     // ==================== scan ====================
 
     @Test

@@ -234,6 +234,7 @@ import com.github.fenrur.signal.operators.*
 | Operator | Description |
 |----------|-------------|
 | `map { }` | Transform values |
+| `bimap(forward, reverse)` | Bidirectional transform for `MutableSignal` |
 | `mapToString()` | Convert to string representation |
 | `mapNotNull { }` | Map and filter nulls |
 | `scan(initial) { acc, value -> }` | Accumulate values over time |
@@ -247,6 +248,16 @@ val count = mutableSignalOf(1)
 
 // Transform values
 val doubled = count.map { it * 2 }
+
+// Bidirectional transform (read and write through a lens)
+val stringSignal = mutableSignalOf("42")
+val intSignal = stringSignal.bimap(
+    forward = { it.toInt() },
+    reverse = { it.toString() }
+)
+println(intSignal.value)  // 42
+intSignal.value = 100
+println(stringSignal.value) // "100"
 
 // Accumulate
 val sum = count.scan(0) { acc, value -> acc + value }

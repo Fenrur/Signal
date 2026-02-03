@@ -22,6 +22,31 @@ import com.github.fenrur.signal.impl.*
 fun <S, R> Signal<S>.map(transform: (S) -> R): Signal<R> = MappedSignal(this, transform)
 
 /**
+ * Creates a bidirectionally-mapped [MutableSignal] with forward and reverse transforms.
+ *
+ * Reading applies [forward] to the source value, writing applies [reverse] before
+ * setting the source. This allows creating a "lens" into a signal with a different type.
+ *
+ * Example:
+ * ```kotlin
+ * val stringSignal = mutableSignalOf("42")
+ * val intSignal = stringSignal.bimap(
+ *     forward = { it.toInt() },
+ *     reverse = { it.toString() }
+ * )
+ * println(intSignal.value) // 42
+ * intSignal.value = 100
+ * println(stringSignal.value) // "100"
+ * ```
+ *
+ * @param forward transforms source values to mapped values (read direction)
+ * @param reverse transforms mapped values back to source values (write direction)
+ * @return a new MutableSignal with bidirectional transformation
+ */
+fun <S, R> MutableSignal<S>.bimap(forward: (S) -> R, reverse: (R) -> S): MutableSignal<R> =
+    BimappedSignal(this, forward, reverse)
+
+/**
  * Maps this signal's values to their string representation.
  */
 fun <S> Signal<S>.mapToString(): Signal<String> = map { it.toString() }
