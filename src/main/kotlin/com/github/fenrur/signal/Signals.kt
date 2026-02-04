@@ -32,6 +32,32 @@ fun <T> signalOf(initial: T): Signal<T> = ReadOnlySignal(initial)
 fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowSignal(initial)
 
 /**
+ * Creates a [BindableSignal] optionally bound to an initial signal.
+ *
+ * @param initialSignal optional initial signal to bind to
+ * @param takeOwnership if true, closes bound signals when unbinding
+ * @return a BindableSignal
+ */
+fun <T> bindableSignalOf(
+    initialSignal: Signal<T>? = null,
+    takeOwnership: Boolean = false
+): BindableSignal<T> = DefaultBindableSignal(initialSignal, takeOwnership)
+
+/**
+ * Creates a [BindableSignal] with an initial value.
+ *
+ * This is a convenience overload that creates an internal [Signal] from the provided value.
+ *
+ * @param initialValue the initial value for the signal
+ * @param takeOwnership if true, closes bound signals when unbinding
+ * @return a BindableSignal initialized with the given value
+ */
+fun <T> bindableSignalOf(
+    initialValue: T,
+    takeOwnership: Boolean = false
+): BindableSignal<T> = DefaultBindableSignal(signalOf(initialValue), takeOwnership)
+
+/**
  * Creates a [BindableMutableSignal] optionally bound to an initial signal.
  *
  * @param initialSignal optional initialSignal signal to bind to

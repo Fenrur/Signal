@@ -7,32 +7,45 @@ package com.github.fenrur.signal
  * - Switch the underlying signal at runtime
  * - Optionally take ownership of bound signals (closing them when this signal closes)
  *
+ * Extends [BindableSignal] with mutable capabilities, requiring a [MutableSignal] as the binding target.
+ *
  * @param T the type of value held by the signal
  */
-interface BindableMutableSignal<T> : MutableSignal<T> {
+interface BindableMutableSignal<T> : BindableSignal<T>, MutableSignal<T> {
 
     /**
-     * Binds this signal to a new underlying signal.
+     * Binds this signal to a new underlying mutable signal.
      *
      * - Unsubscribes from the previous signal
      * - If takeOwnership is enabled, closes the previous signal
      * - Subscribes to the new signal and notifies listeners
      *
-     * @param newSignal the new signal to bind to
+     * @param newSignal the new mutable signal to bind to
      */
     fun bindTo(newSignal: MutableSignal<T>)
 
     /**
-     * Returns the currently bound signal.
+     * Binds this signal to a new underlying signal.
      *
-     * @return the bound signal, or null if not bound
+     * The provided signal must be a [MutableSignal], otherwise an [IllegalArgumentException] is thrown.
+     *
+     * @param newSignal the new signal to bind to (must be a MutableSignal)
+     * @throws IllegalArgumentException if the signal is not a MutableSignal
      */
-    fun currentSignal(): MutableSignal<T>?
+    override fun bindTo(newSignal: Signal<T>) {
+        if (newSignal is MutableSignal<T>) {
+            bindTo(newSignal)
+        } else {
+            throw IllegalArgumentException("BindableMutableSignal requires a MutableSignal, got ${newSignal::class.simpleName}")
+        }
+    }
 
     /**
-     * Returns true if this signal is currently bound to another signal.
+     * Returns the currently bound mutable signal.
+     *
+     * @return the bound mutable signal, or null if not bound
      */
-    fun isBound(): Boolean
+    override fun currentSignal(): MutableSignal<T>?
 
     companion object {
         /**
@@ -45,18 +58,7 @@ interface BindableMutableSignal<T> : MutableSignal<T> {
          * @return true if binding would create a cycle, false otherwise
          */
         fun <T> wouldCreateCycle(source: BindableMutableSignal<T>, target: MutableSignal<T>): Boolean {
-            val visited = mutableSetOf<MutableSignal<*>>()
-            visited.add(source)
-
-            var current: MutableSignal<*>? = target
-            while (current != null) {
-                if (current in visited) {
-                    return true
-                }
-                visited.add(current)
-                current = (current as? BindableMutableSignal<*>)?.currentSignal()
-            }
-            return false
+            return BindableSignal.wouldCreateCycle(source, target)
         }
     }
 }
