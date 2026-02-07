@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /**
  * A read-only [Signal] that combines two source signals.
+ * Uses lazy subscription to prevent memory leaks.
  */
 class CombinedSignal2<A, B, R>(
     private val sa: Signal<A>,
@@ -17,49 +18,64 @@ class CombinedSignal2<A, B, R>(
     private val transform: (A, B) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(sa.value, sb.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubA: UnSubscriber
-    private val unsubB: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubA = AtomicReference<UnSubscriber> {}
+    private val unsubB = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubA = sa.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { va -> update(va, sb.value) }
-            )
-        }
-        unsubB = sb.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vb -> update(sa.value, vb) }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubA.set(sa.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { va -> notifyUpdate(va, sb.value) }
+                )
+            })
+            unsubB.set(sb.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vb -> notifyUpdate(sa.value, vb) }
+                )
+            })
         }
     }
 
-    private fun update(va: A, vb: B) {
-        if (closed.get()) return
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubA.getAndSet {}.invoke()
+            unsubB.getAndSet {}.invoke()
+        }
+    }
+
+    private fun notifyUpdate(va: A, vb: B) {
         val new = transform(va, vb)
-        val old = ref.getAndSet(new)
-        if (old != new) notifyAllValue(listeners.toList(), new)
+        notifyAllValue(listeners.toList(), new)
     }
 
-    override val value: R get() = ref.get()
+    override val value: R get() = transform(sa.value, sb.value)
     override val isClosed: Boolean get() = closed.get()
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            unsubA()
-            unsubB()
             listeners.clear()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubA.getAndSet {}.invoke()
+                unsubB.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -68,6 +84,7 @@ class CombinedSignal2<A, B, R>(
 
 /**
  * A read-only [Signal] that combines three source signals.
+ * Uses lazy subscription to prevent memory leaks.
  */
 class CombinedSignal3<A, B, C, R>(
     private val sa: Signal<A>,
@@ -76,57 +93,74 @@ class CombinedSignal3<A, B, C, R>(
     private val transform: (A, B, C) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(sa.value, sb.value, sc.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubA: UnSubscriber
-    private val unsubB: UnSubscriber
-    private val unsubC: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubA = AtomicReference<UnSubscriber> {}
+    private val unsubB = AtomicReference<UnSubscriber> {}
+    private val unsubC = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubA = sa.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { va -> update(va, sb.value, sc.value) }
-            )
-        }
-        unsubB = sb.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vb -> update(sa.value, vb, sc.value) }
-            )
-        }
-        unsubC = sc.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vc -> update(sa.value, sb.value, vc) }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubA.set(sa.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { va -> notifyUpdate(va, sb.value, sc.value) }
+                )
+            })
+            unsubB.set(sb.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vb -> notifyUpdate(sa.value, vb, sc.value) }
+                )
+            })
+            unsubC.set(sc.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vc -> notifyUpdate(sa.value, sb.value, vc) }
+                )
+            })
         }
     }
 
-    private fun update(va: A, vb: B, vc: C) {
-        if (closed.get()) return
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubA.getAndSet {}.invoke()
+            unsubB.getAndSet {}.invoke()
+            unsubC.getAndSet {}.invoke()
+        }
+    }
+
+    private fun notifyUpdate(va: A, vb: B, vc: C) {
         val new = transform(va, vb, vc)
-        val old = ref.getAndSet(new)
-        if (old != new) notifyAllValue(listeners.toList(), new)
+        notifyAllValue(listeners.toList(), new)
     }
 
-    override val value: R get() = ref.get()
+    override val value: R get() = transform(sa.value, sb.value, sc.value)
     override val isClosed: Boolean get() = closed.get()
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            unsubA()
-            unsubB()
-            unsubC()
             listeners.clear()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubA.getAndSet {}.invoke()
+                unsubB.getAndSet {}.invoke()
+                unsubC.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -135,6 +169,7 @@ class CombinedSignal3<A, B, C, R>(
 
 /**
  * A read-only [Signal] that combines four source signals.
+ * Uses lazy subscription to prevent memory leaks.
  */
 class CombinedSignal4<A, B, C, D, R>(
     private val sa: Signal<A>,
@@ -144,65 +179,84 @@ class CombinedSignal4<A, B, C, D, R>(
     private val transform: (A, B, C, D) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(sa.value, sb.value, sc.value, sd.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubA: UnSubscriber
-    private val unsubB: UnSubscriber
-    private val unsubC: UnSubscriber
-    private val unsubD: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubA = AtomicReference<UnSubscriber> {}
+    private val unsubB = AtomicReference<UnSubscriber> {}
+    private val unsubC = AtomicReference<UnSubscriber> {}
+    private val unsubD = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubA = sa.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { va -> update(va, sb.value, sc.value, sd.value) }
-            )
-        }
-        unsubB = sb.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vb -> update(sa.value, vb, sc.value, sd.value) }
-            )
-        }
-        unsubC = sc.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vc -> update(sa.value, sb.value, vc, sd.value) }
-            )
-        }
-        unsubD = sd.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vd -> update(sa.value, sb.value, sc.value, vd) }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubA.set(sa.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value) }
+                )
+            })
+            unsubB.set(sb.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value) }
+                )
+            })
+            unsubC.set(sc.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value) }
+                )
+            })
+            unsubD.set(sd.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd) }
+                )
+            })
         }
     }
 
-    private fun update(va: A, vb: B, vc: C, vd: D) {
-        if (closed.get()) return
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubA.getAndSet {}.invoke()
+            unsubB.getAndSet {}.invoke()
+            unsubC.getAndSet {}.invoke()
+            unsubD.getAndSet {}.invoke()
+        }
+    }
+
+    private fun notifyUpdate(va: A, vb: B, vc: C, vd: D) {
         val new = transform(va, vb, vc, vd)
-        val old = ref.getAndSet(new)
-        if (old != new) notifyAllValue(listeners.toList(), new)
+        notifyAllValue(listeners.toList(), new)
     }
 
-    override val value: R get() = ref.get()
+    override val value: R get() = transform(sa.value, sb.value, sc.value, sd.value)
     override val isClosed: Boolean get() = closed.get()
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            unsubA()
-            unsubB()
-            unsubC()
-            unsubD()
             listeners.clear()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubA.getAndSet {}.invoke()
+                unsubB.getAndSet {}.invoke()
+                unsubC.getAndSet {}.invoke()
+                unsubD.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -211,6 +265,7 @@ class CombinedSignal4<A, B, C, D, R>(
 
 /**
  * A read-only [Signal] that combines five source signals.
+ * Uses lazy subscription to prevent memory leaks.
  */
 class CombinedSignal5<A, B, C, D, E, R>(
     private val sa: Signal<A>,
@@ -221,73 +276,94 @@ class CombinedSignal5<A, B, C, D, E, R>(
     private val transform: (A, B, C, D, E) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(sa.value, sb.value, sc.value, sd.value, se.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubA: UnSubscriber
-    private val unsubB: UnSubscriber
-    private val unsubC: UnSubscriber
-    private val unsubD: UnSubscriber
-    private val unsubE: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubA = AtomicReference<UnSubscriber> {}
+    private val unsubB = AtomicReference<UnSubscriber> {}
+    private val unsubC = AtomicReference<UnSubscriber> {}
+    private val unsubD = AtomicReference<UnSubscriber> {}
+    private val unsubE = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubA = sa.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { va -> update(va, sb.value, sc.value, sd.value, se.value) }
-            )
-        }
-        unsubB = sb.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vb -> update(sa.value, vb, sc.value, sd.value, se.value) }
-            )
-        }
-        unsubC = sc.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vc -> update(sa.value, sb.value, vc, sd.value, se.value) }
-            )
-        }
-        unsubD = sd.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vd -> update(sa.value, sb.value, sc.value, vd, se.value) }
-            )
-        }
-        unsubE = se.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { ve -> update(sa.value, sb.value, sc.value, sd.value, ve) }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubA.set(sa.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value) }
+                )
+            })
+            unsubB.set(sb.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value) }
+                )
+            })
+            unsubC.set(sc.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value) }
+                )
+            })
+            unsubD.set(sd.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value) }
+                )
+            })
+            unsubE.set(se.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve) }
+                )
+            })
         }
     }
 
-    private fun update(va: A, vb: B, vc: C, vd: D, ve: E) {
-        if (closed.get()) return
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubA.getAndSet {}.invoke()
+            unsubB.getAndSet {}.invoke()
+            unsubC.getAndSet {}.invoke()
+            unsubD.getAndSet {}.invoke()
+            unsubE.getAndSet {}.invoke()
+        }
+    }
+
+    private fun notifyUpdate(va: A, vb: B, vc: C, vd: D, ve: E) {
         val new = transform(va, vb, vc, vd, ve)
-        val old = ref.getAndSet(new)
-        if (old != new) notifyAllValue(listeners.toList(), new)
+        notifyAllValue(listeners.toList(), new)
     }
 
-    override val value: R get() = ref.get()
+    override val value: R get() = transform(sa.value, sb.value, sc.value, sd.value, se.value)
     override val isClosed: Boolean get() = closed.get()
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            unsubA()
-            unsubB()
-            unsubC()
-            unsubD()
-            unsubE()
             listeners.clear()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubA.getAndSet {}.invoke()
+                unsubB.getAndSet {}.invoke()
+                unsubC.getAndSet {}.invoke()
+                unsubD.getAndSet {}.invoke()
+                unsubE.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -296,6 +372,7 @@ class CombinedSignal5<A, B, C, D, E, R>(
 
 /**
  * A read-only [Signal] that combines six source signals.
+ * Uses lazy subscription to prevent memory leaks.
  */
 class CombinedSignal6<A, B, C, D, E, F, R>(
     private val sa: Signal<A>,
@@ -307,81 +384,104 @@ class CombinedSignal6<A, B, C, D, E, F, R>(
     private val transform: (A, B, C, D, E, F) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(sa.value, sb.value, sc.value, sd.value, se.value, sf.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubA: UnSubscriber
-    private val unsubB: UnSubscriber
-    private val unsubC: UnSubscriber
-    private val unsubD: UnSubscriber
-    private val unsubE: UnSubscriber
-    private val unsubF: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubA = AtomicReference<UnSubscriber> {}
+    private val unsubB = AtomicReference<UnSubscriber> {}
+    private val unsubC = AtomicReference<UnSubscriber> {}
+    private val unsubD = AtomicReference<UnSubscriber> {}
+    private val unsubE = AtomicReference<UnSubscriber> {}
+    private val unsubF = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubA = sa.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { va -> update(va, sb.value, sc.value, sd.value, se.value, sf.value) }
-            )
-        }
-        unsubB = sb.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vb -> update(sa.value, vb, sc.value, sd.value, se.value, sf.value) }
-            )
-        }
-        unsubC = sc.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vc -> update(sa.value, sb.value, vc, sd.value, se.value, sf.value) }
-            )
-        }
-        unsubD = sd.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vd -> update(sa.value, sb.value, sc.value, vd, se.value, sf.value) }
-            )
-        }
-        unsubE = se.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { ve -> update(sa.value, sb.value, sc.value, sd.value, ve, sf.value) }
-            )
-        }
-        unsubF = sf.subscribe { either ->
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { vf -> update(sa.value, sb.value, sc.value, sd.value, se.value, vf) }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubA.set(sa.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value, sf.value) }
+                )
+            })
+            unsubB.set(sb.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value, sf.value) }
+                )
+            })
+            unsubC.set(sc.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value, sf.value) }
+                )
+            })
+            unsubD.set(sd.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value, sf.value) }
+                )
+            })
+            unsubE.set(se.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve, sf.value) }
+                )
+            })
+            unsubF.set(sf.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { vf -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, se.value, vf) }
+                )
+            })
         }
     }
 
-    private fun update(va: A, vb: B, vc: C, vd: D, ve: E, vf: F) {
-        if (closed.get()) return
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubA.getAndSet {}.invoke()
+            unsubB.getAndSet {}.invoke()
+            unsubC.getAndSet {}.invoke()
+            unsubD.getAndSet {}.invoke()
+            unsubE.getAndSet {}.invoke()
+            unsubF.getAndSet {}.invoke()
+        }
+    }
+
+    private fun notifyUpdate(va: A, vb: B, vc: C, vd: D, ve: E, vf: F) {
         val new = transform(va, vb, vc, vd, ve, vf)
-        val old = ref.getAndSet(new)
-        if (old != new) notifyAllValue(listeners.toList(), new)
+        notifyAllValue(listeners.toList(), new)
     }
 
-    override val value: R get() = ref.get()
+    override val value: R get() = transform(sa.value, sb.value, sc.value, sd.value, se.value, sf.value)
     override val isClosed: Boolean get() = closed.get()
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            unsubA()
-            unsubB()
-            unsubC()
-            unsubD()
-            unsubE()
-            unsubF()
             listeners.clear()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubA.getAndSet {}.invoke()
+                unsubB.getAndSet {}.invoke()
+                unsubC.getAndSet {}.invoke()
+                unsubD.getAndSet {}.invoke()
+                unsubE.getAndSet {}.invoke()
+                unsubF.getAndSet {}.invoke()
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.BindableSignal
+import com.github.fenrur.signal.BindableMutableSignal
 import com.github.fenrur.signal.Either
-import com.github.fenrur.signal.Signal
+import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
 import java.util.concurrent.CopyOnWriteArrayList
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Default implementation of [BindableSignal].
+ * Default implementation of [BindableMutableSignal].
  *
  * Thread-safety: All operations are thread-safe.
  *
@@ -18,12 +18,12 @@ import java.util.concurrent.atomic.AtomicReference
  * @param initial optional initial signal to bind to
  * @param takeOwnership if true, closes bound signals when unbinding or closing
  */
-class DefaultBindableSignal<T>(
-    initial: Signal<T>? = null,
+class CowBindableMutableSignal<T>(
+    initial: MutableSignal<T>? = null,
     private val takeOwnership: Boolean = false
-) : BindableSignal<T> {
+) : BindableMutableSignal<T> {
 
-    private data class Data<T>(val signal: Signal<T>, val unSubscriber: UnSubscriber)
+    private data class Data<T>(val signal: MutableSignal<T>, val unSubscriber: UnSubscriber)
 
     private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
@@ -38,8 +38,17 @@ class DefaultBindableSignal<T>(
     override val isClosed: Boolean
         get() = closed.get()
 
-    override val value: T
+    override var value: T
         get() = currentSignalOrThrow().value
+        set(newValue) {
+            if (isClosed) return
+            currentSignalOrThrow().value = newValue
+        }
+
+    override fun update(transform: (T) -> T) {
+        if (isClosed) return
+        currentSignalOrThrow().update(transform)
+    }
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
@@ -66,10 +75,10 @@ class DefaultBindableSignal<T>(
         }
     }
 
-    override fun bindTo(newSignal: Signal<T>) {
+    override fun bindTo(newSignal: MutableSignal<T>) {
         if (isClosed) return
 
-        if (BindableSignal.wouldCreateCycle(this, newSignal)) {
+        if (BindableMutableSignal.wouldCreateCycle(this, newSignal)) {
             throw IllegalStateException("Circular binding detected: binding would create a cycle")
         }
 
@@ -100,12 +109,12 @@ class DefaultBindableSignal<T>(
         }
     }
 
-    override fun currentSignal(): Signal<T>? = data.get()?.signal
+    override fun currentSignal(): MutableSignal<T>? = data.get()?.signal
 
     override fun isBound(): Boolean = data.get() != null
 
-    private fun currentSignalOrThrow(): Signal<T> =
-        data.get()?.signal ?: throw IllegalStateException("BindableSignal is not bound")
+    private fun currentSignalOrThrow(): MutableSignal<T> =
+        data.get()?.signal ?: throw IllegalStateException("BindableMutableSignal is not bound")
 
     override fun toString(): String {
         val boundValue = try {
@@ -113,6 +122,6 @@ class DefaultBindableSignal<T>(
         } catch (_: IllegalStateException) {
             "<not bound>"
         }
-        return "DefaultBindableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
+        return "CowBindableMutableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
     }
 }

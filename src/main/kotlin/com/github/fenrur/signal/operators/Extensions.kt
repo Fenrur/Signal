@@ -2,11 +2,8 @@
 
 package com.github.fenrur.signal.operators
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.MutableSignal
-import com.github.fenrur.signal.SubscribeListener
-import com.github.fenrur.signal.UnSubscriber
 import com.github.fenrur.signal.impl.*
 
 // =============================================================================
@@ -56,53 +53,13 @@ fun <S> Signal<S>.mapToString(): Signal<String> = map { it.toString() }
  *
  * Note: Signals always have a value, so if the transform returns null,
  * the last non-null transformed value is retained.
+ * Uses lazy subscription to prevent memory leaks.
  *
  * @param transform transformation that may return null
  * @return signal of non-null transformed values
  */
-fun <S, R : Any> Signal<S>.mapNotNull(transform: (S) -> R?): Signal<R> {
-    val source = this
-    val initialTransformed = transform(source.value)
-
-    return object : Signal<R> {
-        private var lastNonNullValue: R = initialTransformed
-            ?: throw IllegalStateException("mapNotNull requires initial value to transform to non-null")
-        private val mapped = MappedSignal(source) { transform(it) }
-
-        init {
-            source.subscribe { either ->
-                either.fold(
-                    { /* ignore errors */ },
-                    { value ->
-                        val transformed = transform(value)
-                        if (transformed != null) {
-                            lastNonNullValue = transformed
-                        }
-                    }
-                )
-            }
-        }
-
-        override val value: R
-            get() {
-                val current = transform(source.value)
-                return current ?: lastNonNullValue
-            }
-
-        override val isClosed: Boolean get() = mapped.isClosed
-
-        override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
-            return mapped.subscribe { either ->
-                either.fold(
-                    { error -> listener(Either.Left(error)) },
-                    { value -> if (value != null) listener(Either.Right(value)) }
-                )
-            }
-        }
-
-        override fun close() = mapped.close()
-    }
-}
+fun <S, R : Any> Signal<S>.mapNotNull(transform: (S) -> R?): Signal<R> =
+    MapNotNullSignal(this, transform)
 
 /**
  * Accumulates values over time using an accumulator function.
@@ -171,28 +128,13 @@ fun <S, R> Signal<S>.switchMap(transform: (S) -> Signal<R>): Signal<R> = flatMap
  *
  * Note: Signals always have a value, so if the current value doesn't match,
  * the last matching value is retained.
+ * Uses lazy subscription to prevent memory leaks.
  *
  * @param predicate filter condition
  * @return filtered signal
  */
-fun <T> Signal<T>.filter(predicate: (T) -> Boolean): Signal<T> {
-    val source = this
-    return object : Signal<T> by MappedSignal(source, { it }) {
-        private var lastMatchingValue: T = source.value
-
-        init {
-            source.subscribe { either ->
-                either.fold(
-                    { /* ignore errors */ },
-                    { value -> if (predicate(value)) lastMatchingValue = value }
-                )
-            }
-        }
-
-        override val value: T
-            get() = if (predicate(source.value)) source.value else lastMatchingValue
-    }
-}
+fun <T> Signal<T>.filter(predicate: (T) -> Boolean): Signal<T> =
+    FilteredSignal(this, predicate)
 
 /**
  * Filters out null values.
@@ -319,7 +261,7 @@ fun <A, B> Signal<A>.withLatestFrom(other: Signal<B>): Signal<Pair<A, B>> =
  * Combines multiple signals into a list signal.
  */
 fun <T> combineAll(vararg signals: Signal<T>): Signal<List<T>> {
-    if (signals.isEmpty()) return MappedSignal(CowSignal(Unit)) { emptyList() }
+    if (signals.isEmpty()) return MappedSignal(CowMutableSignal(Unit)) { emptyList() }
     return signals.drop(1).fold(signals[0].map { listOf(it) }) { acc, signal ->
         combine(acc, signal) { list, value -> list + value }
     }

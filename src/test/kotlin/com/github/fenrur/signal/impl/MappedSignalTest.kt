@@ -10,7 +10,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal transforms value`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         assertThat(mapped.value).isEqualTo(20)
@@ -18,7 +18,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal updates when source changes`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         source.value = 20
@@ -28,7 +28,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal notifies subscribers`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
@@ -42,7 +42,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal does not notify if transformed value is same`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it / 10 } // 10 -> 1, 15 -> 1
         val callCount = AtomicInteger(0)
 
@@ -55,7 +55,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal can chain transformations`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val doubled = MappedSignal(source) { it * 2 }
         val stringified = MappedSignal(doubled) { "Value: $it" }
 
@@ -67,7 +67,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal closes properly`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         assertThat(mapped.isClosed).isFalse()
@@ -79,7 +79,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal stops receiving after close`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
@@ -94,7 +94,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal can transform to different type`() {
-        val source = CowSignal(42)
+        val source = CowMutableSignal(42)
         val mapped: Signal<String> = MappedSignal(source) { "Number: $it" }
 
         assertThat(mapped.value).isEqualTo("Number: 42")
@@ -102,7 +102,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal propagates errors`() {
-        val source = CowSignal(10)
+        val source = CowMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val errors = CopyOnWriteArrayList<Throwable>()
 

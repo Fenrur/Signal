@@ -6,12 +6,14 @@ import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * A bidirectionally-mapped [MutableSignal] that transforms values in both directions.
  *
  * Reading applies [forward] to the source value, writing applies [reverse] before
  * setting the source. Subscribers receive forward-transformed values.
+ * Uses lazy subscription to prevent memory leaks.
  *
  * Thread-safety: All operations are thread-safe, delegating to the source signal's
  * thread-safety guarantees.
@@ -30,18 +32,27 @@ class BimappedSignal<S, R>(
 
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubscribeSource: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubscribeSource = source.subscribe { either ->
-            if (closed.get()) return@subscribe
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { sv ->
-                    val mapped = forward(sv)
-                    notifyAllValue(listeners.toList(), mapped)
-                }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubscribeSource.set(source.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { sv ->
+                        val mapped = forward(sv)
+                        notifyAllValue(listeners.toList(), mapped)
+                    }
+                )
+            })
+        }
+    }
+
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubscribeSource.getAndSet {}.invoke()
         }
     }
 
@@ -66,15 +77,21 @@ class BimappedSignal<S, R>(
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             listeners.clear()
-            unsubscribeSource()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubscribeSource.getAndSet {}.invoke()
+            }
         }
     }
 

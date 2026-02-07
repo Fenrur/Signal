@@ -9,24 +9,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [Signal] that only emits when the selected key changes.
+ * A [Signal] that filters values based on a predicate.
  *
- * Unlike the base signal's equality check, this allows custom key extraction
- * for determining distinctness.
+ * When the predicate returns false, the signal retains its previous matching value.
  * Uses lazy subscription to prevent memory leaks.
  *
+ * Thread-safety: All operations are thread-safe.
+ *
  * @param T the type of value held by the signal
- * @param K the type of the key used for comparison
  * @param source the source signal
- * @param keySelector function to extract the comparison key
+ * @param predicate filter condition
  */
-class DistinctBySignal<T, K>(
+class FilteredSignal<T>(
     private val source: Signal<T>,
-    private val keySelector: (T) -> K
+    private val predicate: (T) -> Boolean
 ) : Signal<T> {
 
-    private val ref = AtomicReference(source.value)
-    private val lastKey = AtomicReference(keySelector(source.value))
+    private val lastMatchingValue = AtomicReference(source.value)
     private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
     private val subscribed = AtomicBoolean(false)
@@ -38,13 +37,10 @@ class DistinctBySignal<T, K>(
                 if (closed.get()) return@subscribe
                 either.fold(
                     { ex -> notifyAllError(listeners.toList(), ex) },
-                    { newValue ->
-                        val newKey = keySelector(newValue)
-                        val oldKey = lastKey.get()
-                        if (oldKey != newKey) {
-                            lastKey.set(newKey)
-                            ref.set(newValue)
-                            notifyAllValue(listeners.toList(), newValue)
+                    { sv ->
+                        if (predicate(sv)) {
+                            lastMatchingValue.set(sv)
+                            notifyAllValue(listeners.toList(), sv)
                         }
                     }
                 )
@@ -59,7 +55,9 @@ class DistinctBySignal<T, K>(
     }
 
     override val isClosed: Boolean get() = closed.get()
-    override val value: T get() = ref.get()
+
+    override val value: T
+        get() = if (predicate(source.value)) source.value else lastMatchingValue.get()
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
@@ -81,5 +79,5 @@ class DistinctBySignal<T, K>(
         }
     }
 
-    override fun toString(): String = "DistinctBySignal(value=$value, isClosed=$isClosed)"
+    override fun toString(): String = "FilteredSignal(value=$value, isClosed=$isClosed)"
 }

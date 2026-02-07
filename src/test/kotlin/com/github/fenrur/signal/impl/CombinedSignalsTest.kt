@@ -10,8 +10,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 combines two signals`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         assertThat(combined.value).isEqualTo(30)
@@ -19,8 +19,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 updates when first signal changes`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         a.value = 100
@@ -30,8 +30,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 updates when second signal changes`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         b.value = 200
@@ -41,8 +41,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 notifies subscribers`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
         val values = CopyOnWriteArrayList<Int>()
 
@@ -58,9 +58,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined3 combines three signals`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
         val combined = CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
 
         assertThat(combined.value).isEqualTo(6)
@@ -68,9 +68,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined3 updates when any signal changes`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
         val combined = CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
 
         a.value = 10
@@ -87,10 +87,10 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined4 combines four signals`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
-        val d = CowSignal(4)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
+        val d = CowMutableSignal(4)
         val combined = CombinedSignal4(a, b, c, d) { w, x, y, z -> w + x + y + z }
 
         assertThat(combined.value).isEqualTo(10)
@@ -98,10 +98,10 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined4 updates when any signal changes`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
-        val d = CowSignal(4)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
+        val d = CowMutableSignal(4)
         val combined = CombinedSignal4(a, b, c, d) { w, x, y, z -> w * x * y * z }
 
         d.value = 10
@@ -113,11 +113,11 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined5 combines five signals`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
-        val d = CowSignal(4)
-        val e = CowSignal(5)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
+        val d = CowMutableSignal(4)
+        val e = CowMutableSignal(5)
         val combined = CombinedSignal5(a, b, c, d, e) { v, w, x, y, z -> v + w + x + y + z }
 
         assertThat(combined.value).isEqualTo(15)
@@ -127,12 +127,12 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined6 combines six signals`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
-        val d = CowSignal(4)
-        val e = CowSignal(5)
-        val f = CowSignal(6)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
+        val d = CowMutableSignal(4)
+        val e = CowMutableSignal(5)
+        val f = CowMutableSignal(6)
         val combined = CombinedSignal6(a, b, c, d, e, f) { u, v, w, x, y, z -> u + v + w + x + y + z }
 
         assertThat(combined.value).isEqualTo(21)
@@ -140,12 +140,12 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined6 updates when last signal changes`() {
-        val a = CowSignal(1)
-        val b = CowSignal(2)
-        val c = CowSignal(3)
-        val d = CowSignal(4)
-        val e = CowSignal(5)
-        val f = CowSignal(6)
+        val a = CowMutableSignal(1)
+        val b = CowMutableSignal(2)
+        val c = CowMutableSignal(3)
+        val d = CowMutableSignal(4)
+        val e = CowMutableSignal(5)
+        val f = CowMutableSignal(6)
         val combined = CombinedSignal6(a, b, c, d, e, f) { u, v, w, x, y, z -> u + v + w + x + y + z }
 
         f.value = 100
@@ -157,8 +157,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signal closes properly`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         combined.close()
@@ -168,8 +168,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signal stops receiving after close`() {
-        val a = CowSignal(10)
-        val b = CowSignal(20)
+        val a = CowMutableSignal(10)
+        val b = CowMutableSignal(20)
         val combined = CombinedSignal2(a, b) { x, y -> x + y }
         val values = CopyOnWriteArrayList<Int>()
 
@@ -186,8 +186,8 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signals can have different types`() {
-        val name = CowSignal("John")
-        val age = CowSignal(30)
+        val name = CowMutableSignal("John")
+        val age = CowMutableSignal(30)
         val combined = CombinedSignal2(name, age) { n, a -> "$n is $a years old" }
 
         assertThat(combined.value).isEqualTo("John is 30 years old")
@@ -200,8 +200,8 @@ class CombinedSignalsTest {
     fun `combined signals can produce complex types`() {
         data class Person(val name: String, val age: Int)
 
-        val name = CowSignal("John")
-        val age = CowSignal(30)
+        val name = CowMutableSignal("John")
+        val age = CowMutableSignal(30)
         val combined = CombinedSignal2(name, age) { n, a -> Person(n, a) }
 
         assertThat(combined.value).isEqualTo(Person("John", 30))

@@ -9,23 +9,23 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 
-class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
+class CowBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     override fun createSignal(initial: Int): MutableSignal<Int> {
-        val source = CowSignal(initial)
-        return DefaultBindableMutableSignal(source)
+        val source = CowMutableSignal(initial)
+        return CowBindableMutableSignal(source)
     }
 
     override fun createNullableSignal(): MutableSignal<Int?> {
-        val source = CowSignal<Int?>(null)
-        return DefaultBindableMutableSignal(source)
+        val source = CowMutableSignal<Int?>(null)
+        return CowBindableMutableSignal(source)
     }
 
     // ==================== DefaultBindableMutableSignal specific tests ====================
 
     @Test
     fun `unbound signal throws on value access`() {
-        val signal = DefaultBindableMutableSignal<Int>()
+        val signal = CowBindableMutableSignal<Int>()
 
         assertThatThrownBy { signal.value }
             .isInstanceOf(IllegalStateException::class.java)
@@ -34,9 +34,9 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `bindTo changes the underlying signal`() {
-        val source1 = CowSignal(10)
-        val source2 = CowSignal(20)
-        val signal = DefaultBindableMutableSignal(source1)
+        val source1 = CowMutableSignal(10)
+        val source2 = CowMutableSignal(20)
+        val signal = CowBindableMutableSignal(source1)
 
         assertThat(signal.value).isEqualTo(10)
 
@@ -47,9 +47,9 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `bindTo notifies subscribers with new value`() {
-        val source1 = CowSignal(10)
-        val source2 = CowSignal(20)
-        val signal = DefaultBindableMutableSignal(source1)
+        val source1 = CowMutableSignal(10)
+        val source2 = CowMutableSignal(20)
+        val signal = CowBindableMutableSignal(source1)
         val values = CopyOnWriteArrayList<Int>()
 
         signal.subscribe { it.onRight { v -> values.add(v) } }
@@ -62,9 +62,9 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `changes to new source are propagated`() {
-        val source1 = CowSignal(10)
-        val source2 = CowSignal(20)
-        val signal = DefaultBindableMutableSignal(source1)
+        val source1 = CowMutableSignal(10)
+        val source2 = CowMutableSignal(20)
+        val signal = CowBindableMutableSignal(source1)
         val values = CopyOnWriteArrayList<Int>()
 
         signal.subscribe { it.onRight { v -> values.add(v) } }
@@ -79,9 +79,9 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `changes to old source are not propagated after rebind`() {
-        val source1 = CowSignal(10)
-        val source2 = CowSignal(20)
-        val signal = DefaultBindableMutableSignal(source1)
+        val source1 = CowMutableSignal(10)
+        val source2 = CowMutableSignal(20)
+        val signal = CowBindableMutableSignal(source1)
         val values = CopyOnWriteArrayList<Int>()
 
         signal.subscribe { it.onRight { v -> values.add(v) } }
@@ -96,9 +96,9 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `takeOwnership closes old signal on rebind`() {
-        val source1 = CowSignal(10)
-        val source2 = CowSignal(20)
-        val signal = DefaultBindableMutableSignal(source1, takeOwnership = true)
+        val source1 = CowMutableSignal(10)
+        val source2 = CowMutableSignal(20)
+        val signal = CowBindableMutableSignal(source1, takeOwnership = true)
 
         assertThat(source1.isClosed).isFalse()
 
@@ -110,8 +110,8 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `takeOwnership closes source on close`() {
-        val source = CowSignal(10)
-        val signal = DefaultBindableMutableSignal(source, takeOwnership = true)
+        val source = CowMutableSignal(10)
+        val signal = CowBindableMutableSignal(source, takeOwnership = true)
 
         signal.close()
 
@@ -120,8 +120,8 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `without takeOwnership source is not closed`() {
-        val source = CowSignal(10)
-        val signal = DefaultBindableMutableSignal(source, takeOwnership = false)
+        val source = CowMutableSignal(10)
+        val signal = CowBindableMutableSignal(source, takeOwnership = false)
 
         signal.close()
 
@@ -130,31 +130,31 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `isBound returns correct state`() {
-        val signal = DefaultBindableMutableSignal<Int>()
+        val signal = CowBindableMutableSignal<Int>()
         assertThat(signal.isBound()).isFalse()
 
-        signal.bindTo(CowSignal(10))
+        signal.bindTo(CowMutableSignal(10))
         assertThat(signal.isBound()).isTrue()
     }
 
     @Test
     fun `currentSignal returns bound signal`() {
-        val source = CowSignal(10)
-        val signal = DefaultBindableMutableSignal(source)
+        val source = CowMutableSignal(10)
+        val signal = CowBindableMutableSignal(source)
 
         assertThat(signal.currentSignal()).isSameAs(source)
     }
 
     @Test
     fun `currentSignal returns null when not bound`() {
-        val signal = DefaultBindableMutableSignal<Int>()
+        val signal = CowBindableMutableSignal<Int>()
         assertThat(signal.currentSignal()).isNull()
     }
 
     @Test
     fun `setting value updates the bound source`() {
-        val source = CowSignal(10)
-        val signal = DefaultBindableMutableSignal(source)
+        val source = CowMutableSignal(10)
+        val signal = CowBindableMutableSignal(source)
 
         signal.value = 20
 
@@ -163,8 +163,8 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
 
     @Test
     fun `update updates the bound source`() {
-        val source = CowSignal(10)
-        val signal = DefaultBindableMutableSignal(source)
+        val source = CowMutableSignal(10)
+        val signal = CowBindableMutableSignal(source)
 
         signal.update { it + 5 }
 
@@ -224,7 +224,7 @@ class DefaultBindableMutableSignalTest : AbstractMutableSignalTest() {
     @Test
     fun `wouldCreateCycle returns false when target is regular MutableSignal`() {
         val a = bindableMutableSignalOf(1)
-        val b = CowSignal(2)
+        val b = CowMutableSignal(2)
 
         assertThat(BindableMutableSignal.wouldCreateCycle(a, b)).isFalse()
     }

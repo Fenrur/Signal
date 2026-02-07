@@ -19,17 +19,17 @@ import org.reactivestreams.Publisher
  * @param initial the value of the signal
  * @return a read-only signal
  */
-fun <T> signalOf(initial: T): Signal<T> = ReadOnlySignal(initial)
+fun <T> signalOf(initial: T): Signal<T> = CowMutableSignal(initial)
 
 /**
  * Creates a [MutableSignal] with the given initial value.
  *
- * Uses the default [CowSignal] implementation which is optimized for read-intensive scenarios.
+ * Uses the default [CowMutableSignal] implementation which is optimized for read-intensive scenarios.
  *
  * @param initial the initial value of the signal
  * @return a mutable signal
  */
-fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowSignal(initial)
+fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowMutableSignal(initial)
 
 /**
  * Creates a [BindableSignal] optionally bound to an initial signal.
@@ -41,7 +41,7 @@ fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowSignal(initial)
 fun <T> bindableSignalOf(
     initialSignal: Signal<T>? = null,
     takeOwnership: Boolean = false
-): BindableSignal<T> = DefaultBindableSignal(initialSignal, takeOwnership)
+): BindableSignal<T> = CowBindableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [BindableSignal] with an initial value.
@@ -55,7 +55,7 @@ fun <T> bindableSignalOf(
 fun <T> bindableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): BindableSignal<T> = DefaultBindableSignal(signalOf(initialValue), takeOwnership)
+): BindableSignal<T> = CowBindableSignal(signalOf(initialValue), takeOwnership)
 
 /**
  * Creates a [BindableMutableSignal] optionally bound to an initial signal.
@@ -67,7 +67,7 @@ fun <T> bindableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialSignal: MutableSignal<T>? = null,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = DefaultBindableMutableSignal(initialSignal, takeOwnership)
+): BindableMutableSignal<T> = CowBindableMutableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [BindableMutableSignal] with an initial value.
@@ -81,21 +81,7 @@ fun <T> bindableMutableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = DefaultBindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
-
-/**
- * Creates a read-only view of a [MutableSignal].
- *
- * @return a read-only signal with the same value
- */
-fun <T> MutableSignal<T>.asReadOnly(): Signal<T> = ReadOnlySignal(value).also { readOnly ->
-    this.subscribe { either ->
-        either.fold(
-            { /* ignore errors */ },
-            { /* ReadOnlySignal doesn't propagate changes */ }
-        )
-    }
-}
+): BindableMutableSignal<T> = CowBindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
 
 // =============================================================================
 // JDK FLOW INTEGRATION (Java 9+)

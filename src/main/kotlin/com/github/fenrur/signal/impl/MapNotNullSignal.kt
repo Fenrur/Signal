@@ -9,28 +9,35 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [Signal] that only emits when the selected key changes.
+ * A [Signal] that transforms values and filters out nulls.
  *
- * Unlike the base signal's equality check, this allows custom key extraction
- * for determining distinctness.
+ * When the transform returns null, the signal retains its previous non-null value.
  * Uses lazy subscription to prevent memory leaks.
  *
- * @param T the type of value held by the signal
- * @param K the type of the key used for comparison
+ * Thread-safety: All operations are thread-safe.
+ *
+ * @param S the type of source values
+ * @param R the type of transformed non-null values
  * @param source the source signal
- * @param keySelector function to extract the comparison key
+ * @param transform transformation that may return null
+ * @throws IllegalStateException if initial value transforms to null
  */
-class DistinctBySignal<T, K>(
-    private val source: Signal<T>,
-    private val keySelector: (T) -> K
-) : Signal<T> {
+class MapNotNullSignal<S, R : Any>(
+    private val source: Signal<S>,
+    private val transform: (S) -> R?
+) : Signal<R> {
 
-    private val ref = AtomicReference(source.value)
-    private val lastKey = AtomicReference(keySelector(source.value))
-    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
+    private val lastNonNullValue: AtomicReference<R>
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
     private val subscribed = AtomicBoolean(false)
     private val unsubscribeSource = AtomicReference<UnSubscriber> {}
+
+    init {
+        val initialTransformed = transform(source.value)
+            ?: throw IllegalStateException("mapNotNull requires initial value to transform to non-null")
+        lastNonNullValue = AtomicReference(initialTransformed)
+    }
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
@@ -38,13 +45,11 @@ class DistinctBySignal<T, K>(
                 if (closed.get()) return@subscribe
                 either.fold(
                     { ex -> notifyAllError(listeners.toList(), ex) },
-                    { newValue ->
-                        val newKey = keySelector(newValue)
-                        val oldKey = lastKey.get()
-                        if (oldKey != newKey) {
-                            lastKey.set(newKey)
-                            ref.set(newValue)
-                            notifyAllValue(listeners.toList(), newValue)
+                    { sv ->
+                        val transformed = transform(sv)
+                        if (transformed != null) {
+                            lastNonNullValue.set(transformed)
+                            notifyAllValue(listeners.toList(), transformed)
                         }
                     }
                 )
@@ -58,10 +63,15 @@ class DistinctBySignal<T, K>(
         }
     }
 
-    override val isClosed: Boolean get() = closed.get()
-    override val value: T get() = ref.get()
+    override val value: R
+        get() {
+            val current = transform(source.value)
+            return current ?: lastNonNullValue.get()
+        }
 
-    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
+    override val isClosed: Boolean get() = closed.get()
+
+    override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
         listener(Either.Right(value))
@@ -81,5 +91,5 @@ class DistinctBySignal<T, K>(
         }
     }
 
-    override fun toString(): String = "DistinctBySignal(value=$value, isClosed=$isClosed)"
+    override fun toString(): String = "MapNotNullSignal(value=$value, isClosed=$isClosed)"
 }

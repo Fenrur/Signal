@@ -1,7 +1,7 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.Either
-import com.github.fenrur.signal.MutableSignal
+import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
 import java.util.concurrent.CopyOnWriteArrayList
@@ -9,46 +9,27 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Copy-On-Write implementation of [MutableSignal].
+ * A simple read-only [Signal] implementation with a fixed initial value.
  *
- * This implementation uses a [CopyOnWriteArrayList] for listeners,
- * making it very safe for read-intensive scenarios with occasional writes.
+ * This signal holds an immutable value that never changes after creation.
+ * Subscribers will receive the initial value immediately upon subscription.
  *
  * Thread-safety: All operations are thread-safe.
  *
  * @param T the type of value held by the signal
- * @param initial the initial value of the signal
+ * @param initial the value of the signal
  */
-class CowSignal<T>(initial: T) : MutableSignal<T> {
+class CowSignal<T>(initial: T) : Signal<T> {
 
     private val ref = AtomicReference(initial)
     private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
 
+    override val value: T
+        get() = ref.get()
+
     override val isClosed: Boolean
         get() = closed.get()
-
-    override var value: T
-        get() = ref.get()
-        set(new) {
-            if (isClosed) return
-            val old = ref.getAndSet(new)
-            if (old != new) notifyAllValue(listeners.toList(), new)
-        }
-
-    override fun update(transform: (T) -> T) {
-        if (isClosed) return
-        while (true) {
-            val cur = ref.get()
-            val next = transform(cur)
-            if (cur == next) return
-            if (ref.compareAndSet(cur, next)) {
-                if (!isClosed) notifyAllValue(listeners.toList(), next)
-                return
-            }
-            if (isClosed) return
-        }
-    }
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}

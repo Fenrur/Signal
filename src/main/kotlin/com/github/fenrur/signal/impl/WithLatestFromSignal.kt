@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * Emits whenever the source signal changes, combining with the latest
  * value from the other signal. Does NOT emit when only the other signal changes.
+ * Uses lazy subscription to prevent memory leaks.
  *
  * @param A the type of source values
  * @param B the type of other signal values
@@ -27,42 +28,53 @@ class WithLatestFromSignal<A, B, R>(
     private val combiner: (A, B) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(combiner(source.value, other.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubscribeSource: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
 
-    init {
-        // Only subscribe to source - we sample other on each source emission
-        unsubscribeSource = source.subscribe { either ->
-            if (closed.get()) return@subscribe
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { sourceValue ->
-                    val combined = combiner(sourceValue, other.value)
-                    val old = ref.getAndSet(combined)
-                    if (old != combined) {
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            // Only subscribe to source - we sample other on each source emission
+            unsubscribeSource.set(source.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { sourceValue ->
+                        val combined = combiner(sourceValue, other.value)
                         notifyAllValue(listeners.toList(), combined)
                     }
-                }
-            )
+                )
+            })
+        }
+    }
+
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubscribeSource.getAndSet {}.invoke()
         }
     }
 
     override val isClosed: Boolean get() = closed.get()
-    override val value: R get() = ref.get()
+    override val value: R get() = combiner(source.value, other.value)
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             listeners.clear()
-            unsubscribeSource()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubscribeSource.getAndSet {}.invoke()
+            }
         }
     }
 

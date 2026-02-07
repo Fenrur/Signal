@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicReference
  * A derived read-only [Signal] that transforms values from a source signal.
  *
  * This signal applies a transformation function to each value emitted by the source signal.
- * It automatically subscribes to the source and propagates transformed values.
+ * It uses lazy subscription: only subscribes to the source when it has subscribers,
+ * and unsubscribes when all subscribers are removed. This prevents memory leaks.
  *
  * Thread-safety: All operations are thread-safe.
  *
@@ -22,26 +23,37 @@ import java.util.concurrent.atomic.AtomicReference
  * @param transform the transformation function
  */
 class MappedSignal<S, R>(
-    source: Signal<S>,
+    private val source: Signal<S>,
     private val transform: (S) -> R
 ) : Signal<R> {
 
-    private val ref = AtomicReference(transform(source.value))
+    private val lastNotified = AtomicReference(transform(source.value))
     private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
-    private val unsubscribeSource: UnSubscriber
+    private val subscribed = AtomicBoolean(false)
+    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
 
-    init {
-        unsubscribeSource = source.subscribe { either ->
-            if (closed.get()) return@subscribe
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { sv ->
-                    val new = transform(sv)
-                    val old = ref.getAndSet(new)
-                    if (old != new) notifyAllValue(listeners.toList(), new)
-                }
-            )
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            unsubscribeSource.set(source.subscribe { either ->
+                if (closed.get()) return@subscribe
+                either.fold(
+                    { ex -> notifyAllError(listeners.toList(), ex) },
+                    { sv ->
+                        val new = transform(sv)
+                        val old = lastNotified.getAndSet(new)
+                        if (old != new) {
+                            notifyAllValue(listeners.toList(), new)
+                        }
+                    }
+                )
+            })
+        }
+    }
+
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
+            unsubscribeSource.getAndSet {}.invoke()
         }
     }
 
@@ -49,19 +61,25 @@ class MappedSignal<S, R>(
         get() = closed.get()
 
     override val value: R
-        get() = ref.get()
+        get() = transform(source.value)
 
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
+        ensureSubscribed()
         listener(Either.Right(value))
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             listeners.clear()
-            unsubscribeSource()
+            if (subscribed.compareAndSet(true, false)) {
+                unsubscribeSource.getAndSet {}.invoke()
+            }
         }
     }
 
