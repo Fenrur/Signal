@@ -73,8 +73,8 @@ class SignalCoroutinesTest {
         val signal = stateFlow.asSignal(this)
 
         val values = mutableListOf<Int>()
-        signal.subscribe { either ->
-            either.fold({}, { values.add(it) })
+        signal.subscribe {
+            it.onSuccess { v -> values.add(v) }
         }
 
         delay(50) // Wait for initial collection
@@ -93,8 +93,8 @@ class SignalCoroutinesTest {
         val signal = stateFlow.asSignal(this)
 
         val values = mutableListOf<Int>()
-        signal.subscribe { either ->
-            either.fold({}, { values.add(it) })
+        signal.subscribe {
+            it.onSuccess { v -> values.add(v) }
         }
 
         delay(50) // Wait for initial collection
@@ -136,8 +136,8 @@ class SignalCoroutinesTest {
         val signal = stateFlow.asSignal(this)
 
         val values = mutableListOf<Int>()
-        signal.subscribe { either ->
-            either.fold({}, { values.add(it) })
+        signal.subscribe {
+            it.onSuccess { v -> values.add(v) }
         }
 
         delay(50) // Wait for initial collection

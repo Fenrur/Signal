@@ -1,28 +1,27 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Queue-based implementation of [MutableSignal].
+ * Copy-On-Write implementation of [MutableSignal].
  *
- * This implementation uses a [ConcurrentLinkedQueue] for listeners,
- * providing good performance for scenarios with frequent subscribe/unsubscribe operations.
+ * This implementation uses a [CopyOnWriteArrayList] for listeners,
+ * making it very safe for read-intensive scenarios with occasional writes.
  *
  * Thread-safety: All operations are thread-safe.
  *
  * @param T the type of value held by the signal
  * @param initial the initial value of the signal
  */
-class QueuedSignal<T>(initial: T) : MutableSignal<T> {
+class DefaultMutableSignal<T>(initial: T) : MutableSignal<T> {
 
     private val ref = AtomicReference(initial)
-    private val listeners = ConcurrentLinkedQueue<SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
 
     override val isClosed: Boolean
@@ -52,7 +51,7 @@ class QueuedSignal<T>(initial: T) : MutableSignal<T> {
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }
@@ -63,5 +62,5 @@ class QueuedSignal<T>(initial: T) : MutableSignal<T> {
         }
     }
 
-    override fun toString(): String = "QueuedSignal(value=$value, isClosed=$isClosed)"
+    override fun toString(): String = "DefaultMutableSignal(value=$value, isClosed=$isClosed)"
 }

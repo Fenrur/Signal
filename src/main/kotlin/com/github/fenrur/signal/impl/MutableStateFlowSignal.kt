@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -78,7 +77,7 @@ class MutableStateFlowSignal<T>(
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.get()) return {}
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }

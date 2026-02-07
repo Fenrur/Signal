@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -41,17 +40,17 @@ class MapNotNullSignal<S, R : Any>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { either ->
+            unsubscribeSource.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { sv ->
+                result.fold(
+                    onSuccess = { sv ->
                         val transformed = transform(sv)
                         if (transformed != null) {
                             lastNonNullValue.set(transformed)
                             notifyAllValue(listeners.toList(), transformed)
                         }
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -74,7 +73,7 @@ class MapNotNullSignal<S, R : Any>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

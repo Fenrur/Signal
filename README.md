@@ -66,10 +66,10 @@ val count: Signal<Int> = signalOf(0)
 println(count.value) // 0
 
 // Subscribe to changes
-val unsubscribe = count.subscribe { either ->
-    either.fold(
-        onLeft = { error -> println("Error: $error") },
-        onRight = { value -> println("Value: $value") }
+val unsubscribe = count.subscribe { result ->
+    result.fold(
+        onSuccess = { value -> println("Value: $value") },
+        onFailure = { error -> println("Error: $error") }
     )
 }
 
@@ -106,17 +106,6 @@ delegatedCount = 10
 println(count.value) // 10
 ```
 
-## Implementations
-
-The library provides several `MutableSignal` implementations optimized for different use cases:
-
-| Implementation | Factory | Best For |
-|---------------|---------|----------|
-| `CowSignal` | `mutableSignalOf()` / `cowSignalOf()` | Read-intensive scenarios (default) |
-| `QueuedSignal` | `queuedSignalOf()` | Frequent subscribe/unsubscribe |
-| `IndexedSignal` | `indexedSignalOf()` | O(1) listener lookup |
-| `LockedSignal` | `lockedSignalOf()` | Explicit lock control, fair locking |
-
 ### Special Signals
 
 ```kotlin
@@ -125,6 +114,96 @@ val constant: Signal<String> = signalOf("Hello")
 
 // From Java Flow.Publisher
 val flowSignal = publisher.asSignal(initialValue)
+```
+
+### BindableSignal
+
+A `BindableSignal<T>` is a read-only signal that acts as a proxy to another `Signal`. It allows you to dynamically switch the underlying signal at runtime while maintaining subscriptions.
+
+#### Basic Usage
+
+```kotlin
+// Create an unbound signal
+val bindable = bindableSignalOf<Int>()
+println(bindable.isBound()) // false
+
+// Bind to a source signal
+val source1 = signalOf(10)
+bindable.bindTo(source1)
+println(bindable.value) // 10
+
+// Switch to a different source
+val source2 = mutableSignalOf(100)
+bindable.bindTo(source2)
+println(bindable.value) // 100
+
+// Changes in the source are propagated
+source2.value = 200
+println(bindable.value) // 200
+
+// Subscribers are automatically notified of the new value
+bindable.subscribe { result ->
+    result.onSuccess { println("Value: $it") }
+}
+```
+
+#### Factory Functions
+
+```kotlin
+// Create unbound (throws on value access until bound)
+val unbound = bindableSignalOf<String>()
+
+// Create with initial signal binding
+val withSignal = bindableSignalOf(signalOf(42))
+println(withSignal.value) // 42
+
+// Create with initial value (creates internal signal automatically)
+val withValue = bindableSignalOf(initialValue = "Hello")
+println(withValue.value) // "Hello"
+
+// Check binding state
+println(withSignal.isBound())        // true
+println(withSignal.currentSignal())  // returns the bound Signal
+```
+
+#### Ownership Mode
+
+When `takeOwnership = true`, the bindable signal takes ownership of bound signals and closes them automatically:
+
+```kotlin
+val bindable = bindableSignalOf<Int>(takeOwnership = true)
+
+val source1 = signalOf(1)
+bindable.bindTo(source1)
+println(source1.isClosed) // false
+
+val source2 = signalOf(2)
+bindable.bindTo(source2)
+println(source1.isClosed) // true - automatically closed on rebind
+
+bindable.close()
+println(source2.isClosed) // true - closed when bindable closes
+```
+
+#### Circular Binding Detection
+
+The library automatically detects and prevents circular bindings that would cause infinite loops:
+
+```kotlin
+val a = bindableSignalOf(1)
+val b = bindableSignalOf<Int>()
+val c = bindableSignalOf<Int>()
+
+b.bindTo(a)
+c.bindTo(b)
+
+// This would create a cycle: a -> b -> c -> a
+a.bindTo(c) // Throws IllegalStateException: "Circular binding detected"
+
+// You can check for cycles before binding
+if (!BindableSignal.wouldCreateCycle(a, c)) {
+    a.bindTo(c)
+}
 ```
 
 ### BindableMutableSignal
@@ -153,8 +232,8 @@ bindable.bindTo(source2)
 println(bindable.value) // 100
 
 // Subscribers are automatically notified of the new value
-bindable.subscribe { either ->
-    either.onRight { println("Value: $it") }
+bindable.subscribe { result ->
+    result.onSuccess { println("Value: $it") }
 }
 ```
 
@@ -489,28 +568,6 @@ cache.remove("a")    // {}
 ## Optional Integrations
 
 The following integrations are optional. Add the corresponding dependency only if you need them.
-
-### Arrow (Optional)
-
-Convert between Signal's `Either` and Arrow's `Either`:
-
-```kotlin
-// Add Arrow as a dependency (not included transitively)
-implementation("io.arrow-kt:arrow-core:2.0.1")
-```
-
-```kotlin
-import com.github.fenrur.signal.arrow.*
-
-// Convert Signal's Either to Arrow's Either
-signal.subscribe { either ->
-    val arrowEither = either.asArrow()
-    // Use Arrow's Either methods
-}
-
-// Convert Arrow's Either to Signal's Either
-val signalEither = arrowEither.asSignal()
-```
 
 ### Kotlin Coroutines Flow (Optional)
 

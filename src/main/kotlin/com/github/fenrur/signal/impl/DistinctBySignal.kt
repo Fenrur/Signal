@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -34,11 +33,10 @@ class DistinctBySignal<T, K>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { either ->
+            unsubscribeSource.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { newValue ->
+                result.fold(
+                    onSuccess = { newValue ->
                         val newKey = keySelector(newValue)
                         val oldKey = lastKey.get()
                         if (oldKey != newKey) {
@@ -46,7 +44,8 @@ class DistinctBySignal<T, K>(
                             ref.set(newValue)
                             notifyAllValue(listeners.toList(), newValue)
                         }
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -64,7 +63,7 @@ class DistinctBySignal<T, K>(
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

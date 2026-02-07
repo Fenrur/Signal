@@ -1,7 +1,7 @@
 package com.github.fenrur.signal.operators
 
 import com.github.fenrur.signal.Signal
-import com.github.fenrur.signal.impl.CowMutableSignal
+import com.github.fenrur.signal.impl.DefaultMutableSignal
 import com.github.fenrur.signal.mutableSignalOf
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -18,7 +18,7 @@ class ExtensionsTest {
 
     @Test
     fun `map transforms signal value`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
 
         assertThat(mapped.value).isEqualTo(20)
@@ -26,7 +26,7 @@ class ExtensionsTest {
 
     @Test
     fun `map updates when source changes`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
 
         source.value = 20
@@ -36,7 +36,7 @@ class ExtensionsTest {
 
     @Test
     fun `map can change type`() {
-        val source = CowMutableSignal(42)
+        val source = DefaultMutableSignal(42)
         val mapped = source.map { "Value: $it" }
 
         assertThat(mapped.value).isEqualTo("Value: 42")
@@ -46,7 +46,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapToString converts to string`() {
-        val source = CowMutableSignal(42)
+        val source = DefaultMutableSignal(42)
         val mapped = source.mapToString()
 
         assertThat(mapped.value).isEqualTo("42")
@@ -55,7 +55,7 @@ class ExtensionsTest {
     @Test
     fun `mapToString works with complex objects`() {
         data class Person(val name: String)
-        val source = CowMutableSignal(Person("John"))
+        val source = DefaultMutableSignal(Person("John"))
         val mapped = source.mapToString()
 
         assertThat(mapped.value).isEqualTo("Person(name=John)")
@@ -65,7 +65,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull filters out null values`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         assertThat(mapped.value).isEqualTo(20)
@@ -73,7 +73,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull retains last non-null value when transform returns null`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         source.value = 3 // Transform returns null
@@ -85,7 +85,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull throws if initial value transforms to null`() {
-        val source = CowMutableSignal(3)
+        val source = DefaultMutableSignal(3)
 
         assertThatThrownBy {
             source.mapNotNull { if (it > 5) it * 2 else null }
@@ -94,11 +94,11 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull notifies only for non-null values`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
         values.clear()
 
         source.value = 20 // non-null
@@ -156,7 +156,7 @@ class ExtensionsTest {
         )
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
 
         source.value = "2"
         source.value = "3"
@@ -173,7 +173,7 @@ class ExtensionsTest {
         )
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
 
         mapped.value = 10
         mapped.value = 20
@@ -190,7 +190,7 @@ class ExtensionsTest {
         )
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
         mapped.close()
 
         source.value = "99"
@@ -278,7 +278,7 @@ class ExtensionsTest {
 
     @Test
     fun `scan accumulates values`() {
-        val source = CowMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         // scan applies accumulator(initial, source.value) once at construction
         // With lazy subscription, accumulator only runs again when subscribed AND source changes
         val accumulated = source.scan(0) { acc, value -> acc + value }
@@ -298,7 +298,7 @@ class ExtensionsTest {
 
     @Test
     fun `scan can change type`() {
-        val source = CowMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val accumulated = source.scan("") { acc, value -> "$acc$value" }
 
         // Initial: "" + "1" = "1"
@@ -315,7 +315,7 @@ class ExtensionsTest {
 
     @Test
     fun `runningReduce accumulates from initial value`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val reduced = source.runningReduce { acc, value -> acc + value }
 
         // runningReduce uses scan(value, accumulator)
@@ -333,7 +333,7 @@ class ExtensionsTest {
 
     @Test
     fun `pairwise emits pairs of consecutive values`() {
-        val source = CowMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val pairs = source.pairwise()
 
         // Initial pair is (initial, initial)
@@ -353,9 +353,9 @@ class ExtensionsTest {
 
     @Test
     fun `flatten flattens nested signals`() {
-        val inner1 = CowMutableSignal(10)
-        val inner2 = CowMutableSignal(20)
-        val outer = CowMutableSignal(inner1 as Signal<Int>)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(20)
+        val outer = DefaultMutableSignal(inner1 as Signal<Int>)
         val flattened = outer.flatten()
 
         assertThat(flattened.value).isEqualTo(10)
@@ -366,8 +366,8 @@ class ExtensionsTest {
 
     @Test
     fun `flatten updates when inner signal changes`() {
-        val inner = CowMutableSignal(10)
-        val outer = CowMutableSignal(inner as Signal<Int>)
+        val inner = DefaultMutableSignal(10)
+        val outer = DefaultMutableSignal(inner as Signal<Int>)
         val flattened = outer.flatten()
 
         inner.value = 30
@@ -378,8 +378,8 @@ class ExtensionsTest {
 
     @Test
     fun `flatMap maps and flattens`() {
-        val source = CowMutableSignal(1)
-        val flattened = source.flatMap { CowMutableSignal(it * 10) }
+        val source = DefaultMutableSignal(1)
+        val flattened = source.flatMap { DefaultMutableSignal(it * 10) }
 
         assertThat(flattened.value).isEqualTo(10)
 
@@ -389,8 +389,8 @@ class ExtensionsTest {
 
     @Test
     fun `switchMap is alias for flatMap`() {
-        val source = CowMutableSignal(1)
-        val switched = source.switchMap { CowMutableSignal(it * 10) }
+        val source = DefaultMutableSignal(1)
+        val switched = source.switchMap { DefaultMutableSignal(it * 10) }
 
         assertThat(switched.value).isEqualTo(10)
     }
@@ -403,7 +403,7 @@ class ExtensionsTest {
 
     @Test
     fun `filter keeps matching values`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val filtered = source.filter { it > 5 }
 
         assertThat(filtered.value).isEqualTo(10)
@@ -411,7 +411,7 @@ class ExtensionsTest {
 
     @Test
     fun `filter retains last matching value`() {
-        val source = com.github.fenrur.signal.impl.CowMutableSignal(10)
+        val source = com.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val filtered = source.filter { it > 5 }
 
         source.value = 3 // doesn't match
@@ -425,7 +425,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterNotNull filters out nulls`() {
-        val source = CowMutableSignal<Int?>(10)
+        val source = DefaultMutableSignal<Int?>(10)
         val filtered = source.filterNotNull()
 
         assertThat(filtered.value).isEqualTo(10)
@@ -441,7 +441,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterIsInstance filters by type`() {
-        val source = CowMutableSignal<Any>("hello")
+        val source = DefaultMutableSignal<Any>("hello")
         val filtered = source.filterIsInstance<String>()
 
         assertThat(filtered.value).isEqualTo("hello")
@@ -458,11 +458,11 @@ class ExtensionsTest {
     @Test
     fun `distinctUntilChangedBy only emits when key changes`() {
         data class Person(val id: Int, val name: String)
-        val source = CowMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
-        distinct.subscribe { it.onRight { v -> values.add(v) } }
+        distinct.subscribe { it.onSuccess { v -> values.add(v) } }
         values.clear()
 
         source.value = Person(1, "Jane") // same id, different name
@@ -475,7 +475,7 @@ class ExtensionsTest {
 
     @Test
     fun `distinctUntilChanged is a no-op`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val distinct = source.distinctUntilChanged()
 
         assertThat(distinct).isSameAs(source)
@@ -489,8 +489,8 @@ class ExtensionsTest {
 
     @Test
     fun `combine2 combines two signals`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val combined = combine(a, b) { x, y -> x + y }
 
         assertThat(combined.value).isEqualTo(30)
@@ -498,9 +498,9 @@ class ExtensionsTest {
 
     @Test
     fun `combine3 combines three signals`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
-        val c = CowMutableSignal(3)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
         val combined = combine(a, b, c) { x, y, z -> x + y + z }
 
         assertThat(combined.value).isEqualTo(6)
@@ -508,10 +508,10 @@ class ExtensionsTest {
 
     @Test
     fun `combine4 combines four signals`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
-        val c = CowMutableSignal(3)
-        val d = CowMutableSignal(4)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
         val combined = combine(a, b, c, d) { w, x, y, z -> w + x + y + z }
 
         assertThat(combined.value).isEqualTo(10)
@@ -519,11 +519,11 @@ class ExtensionsTest {
 
     @Test
     fun `combine5 combines five signals`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
-        val c = CowMutableSignal(3)
-        val d = CowMutableSignal(4)
-        val e = CowMutableSignal(5)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
         val combined = combine(a, b, c, d, e) { v, w, x, y, z -> v + w + x + y + z }
 
         assertThat(combined.value).isEqualTo(15)
@@ -531,12 +531,12 @@ class ExtensionsTest {
 
     @Test
     fun `combine6 combines six signals`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
-        val c = CowMutableSignal(3)
-        val d = CowMutableSignal(4)
-        val e = CowMutableSignal(5)
-        val f = CowMutableSignal(6)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val f = DefaultMutableSignal(6)
         val combined = combine(a, b, c, d, e, f) { u, v, w, x, y, z -> u + v + w + x + y + z }
 
         assertThat(combined.value).isEqualTo(21)
@@ -546,8 +546,8 @@ class ExtensionsTest {
 
     @Test
     fun `zip combines two signals into pair`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal("hello")
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal("hello")
         val zipped = a.zip(b)
 
         assertThat(zipped.value).isEqualTo(10 to "hello")
@@ -555,8 +555,8 @@ class ExtensionsTest {
 
     @Test
     fun `zip updates when either signal changes`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal("hello")
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal("hello")
         val zipped = a.zip(b)
 
         a.value = 20
@@ -568,9 +568,9 @@ class ExtensionsTest {
 
     @Test
     fun `zip3 combines three signals into triple`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal("two")
-        val c = CowMutableSignal(3.0)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
         val zipped = a.zip(b, c)
 
         assertThat(zipped.value).isEqualTo(Triple(1, "two", 3.0))
@@ -580,8 +580,8 @@ class ExtensionsTest {
 
     @Test
     fun `withLatestFrom combines with latest from other`() {
-        val source = CowMutableSignal(10)
-        val other = CowMutableSignal(100)
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertThat(combined.value).isEqualTo(110)
@@ -589,12 +589,12 @@ class ExtensionsTest {
 
     @Test
     fun `withLatestFrom only emits when source changes`() {
-        val source = CowMutableSignal(10)
-        val other = CowMutableSignal(100)
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
-        combined.subscribe { it.onRight { v -> values.add(v) } }
+        combined.subscribe { it.onSuccess { v -> values.add(v) } }
         values.clear()
 
         other.value = 200 // should NOT trigger emission
@@ -606,8 +606,8 @@ class ExtensionsTest {
 
     @Test
     fun `withLatestFrom into pair`() {
-        val source = CowMutableSignal(10)
-        val other = CowMutableSignal("hello")
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal("hello")
         val combined = source.withLatestFrom(other)
 
         assertThat(combined.value).isEqualTo(10 to "hello")
@@ -617,9 +617,9 @@ class ExtensionsTest {
 
     @Test
     fun `combineAll combines multiple signals into list`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
-        val c = CowMutableSignal(3)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
         val combined = combineAll(a, b, c)
 
         assertThat(combined.value).isEqualTo(listOf(1, 2, 3))
@@ -633,8 +633,8 @@ class ExtensionsTest {
 
     @Test
     fun `combineAll updates when any signal changes`() {
-        val a = CowMutableSignal(1)
-        val b = CowMutableSignal(2)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
         val combined = combineAll(a, b)
 
         a.value = 10
@@ -643,7 +643,7 @@ class ExtensionsTest {
 
     @Test
     fun `list combineAll extension`() {
-        val signals = listOf(CowMutableSignal(1), CowMutableSignal(2), CowMutableSignal(3))
+        val signals = listOf(DefaultMutableSignal(1), DefaultMutableSignal(2), DefaultMutableSignal(3))
         val combined = signals.combineAll()
 
         assertThat(combined.value).isEqualTo(listOf(1, 2, 3))
@@ -657,7 +657,7 @@ class ExtensionsTest {
 
     @Test
     fun `not negates boolean signal`() {
-        val source = CowMutableSignal(true)
+        val source = DefaultMutableSignal(true)
         val negated = source.not()
 
         assertThat(negated.value).isFalse()
@@ -665,7 +665,7 @@ class ExtensionsTest {
 
     @Test
     fun `not updates when source changes`() {
-        val source = CowMutableSignal(true)
+        val source = DefaultMutableSignal(true)
         val negated = source.not()
 
         source.value = false
@@ -677,8 +677,8 @@ class ExtensionsTest {
 
     @Test
     fun `and combines two boolean signals`() {
-        val a = CowMutableSignal(true)
-        val b = CowMutableSignal(true)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
         val result = a.and(b)
 
         assertThat(result.value).isTrue()
@@ -691,8 +691,8 @@ class ExtensionsTest {
 
     @Test
     fun `or combines two boolean signals`() {
-        val a = CowMutableSignal(false)
-        val b = CowMutableSignal(false)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
         val result = a.or(b)
 
         assertThat(result.value).isFalse()
@@ -705,8 +705,8 @@ class ExtensionsTest {
 
     @Test
     fun `xor combines two boolean signals`() {
-        val a = CowMutableSignal(true)
-        val b = CowMutableSignal(true)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
         val result = a.xor(b)
 
         assertThat(result.value).isFalse()
@@ -719,9 +719,9 @@ class ExtensionsTest {
 
     @Test
     fun `allOf returns true if all signals are true`() {
-        val a = CowMutableSignal(true)
-        val b = CowMutableSignal(true)
-        val c = CowMutableSignal(true)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
+        val c = DefaultMutableSignal(true)
         val result = allOf(a, b, c)
 
         assertThat(result.value).isTrue()
@@ -734,9 +734,9 @@ class ExtensionsTest {
 
     @Test
     fun `anyOf returns true if any signal is true`() {
-        val a = CowMutableSignal(false)
-        val b = CowMutableSignal(false)
-        val c = CowMutableSignal(false)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
+        val c = DefaultMutableSignal(false)
         val result = anyOf(a, b, c)
 
         assertThat(result.value).isFalse()
@@ -749,8 +749,8 @@ class ExtensionsTest {
 
     @Test
     fun `noneOf returns true if no signal is true`() {
-        val a = CowMutableSignal(false)
-        val b = CowMutableSignal(false)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
         val result = noneOf(a, b)
 
         assertThat(result.value).isTrue()
@@ -767,8 +767,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Int adds two signals`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val result = a + b
 
         assertThat(result.value).isEqualTo(30)
@@ -776,8 +776,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Long adds two signals`() {
-        val a = CowMutableSignal(10L)
-        val b = CowMutableSignal(20L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(20L)
         val result = a + b
 
         assertThat(result.value).isEqualTo(30L)
@@ -785,8 +785,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Double adds two signals`() {
-        val a = CowMutableSignal(10.5)
-        val b = CowMutableSignal(20.5)
+        val a = DefaultMutableSignal(10.5)
+        val b = DefaultMutableSignal(20.5)
         val result = a + b
 
         assertThat(result.value).isEqualTo(31.0)
@@ -794,8 +794,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Float adds two signals`() {
-        val a = CowMutableSignal(10.5f)
-        val b = CowMutableSignal(20.5f)
+        val a = DefaultMutableSignal(10.5f)
+        val b = DefaultMutableSignal(20.5f)
         val result = a + b
 
         assertThat(result.value).isEqualTo(31.0f)
@@ -805,8 +805,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Int subtracts two signals`() {
-        val a = CowMutableSignal(30)
-        val b = CowMutableSignal(10)
+        val a = DefaultMutableSignal(30)
+        val b = DefaultMutableSignal(10)
         val result = a - b
 
         assertThat(result.value).isEqualTo(20)
@@ -814,8 +814,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Long subtracts two signals`() {
-        val a = CowMutableSignal(30L)
-        val b = CowMutableSignal(10L)
+        val a = DefaultMutableSignal(30L)
+        val b = DefaultMutableSignal(10L)
         val result = a - b
 
         assertThat(result.value).isEqualTo(20L)
@@ -823,8 +823,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Double subtracts two signals`() {
-        val a = CowMutableSignal(30.5)
-        val b = CowMutableSignal(10.5)
+        val a = DefaultMutableSignal(30.5)
+        val b = DefaultMutableSignal(10.5)
         val result = a - b
 
         assertThat(result.value).isEqualTo(20.0)
@@ -832,8 +832,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Float subtracts two signals`() {
-        val a = CowMutableSignal(30.5f)
-        val b = CowMutableSignal(10.5f)
+        val a = DefaultMutableSignal(30.5f)
+        val b = DefaultMutableSignal(10.5f)
         val result = a - b
 
         assertThat(result.value).isEqualTo(20.0f)
@@ -843,8 +843,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Int multiplies two signals`() {
-        val a = CowMutableSignal(5)
-        val b = CowMutableSignal(4)
+        val a = DefaultMutableSignal(5)
+        val b = DefaultMutableSignal(4)
         val result = a * b
 
         assertThat(result.value).isEqualTo(20)
@@ -852,8 +852,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Long multiplies two signals`() {
-        val a = CowMutableSignal(5L)
-        val b = CowMutableSignal(4L)
+        val a = DefaultMutableSignal(5L)
+        val b = DefaultMutableSignal(4L)
         val result = a * b
 
         assertThat(result.value).isEqualTo(20L)
@@ -861,8 +861,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Double multiplies two signals`() {
-        val a = CowMutableSignal(2.5)
-        val b = CowMutableSignal(4.0)
+        val a = DefaultMutableSignal(2.5)
+        val b = DefaultMutableSignal(4.0)
         val result = a * b
 
         assertThat(result.value).isEqualTo(10.0)
@@ -870,8 +870,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Float multiplies two signals`() {
-        val a = CowMutableSignal(2.5f)
-        val b = CowMutableSignal(4.0f)
+        val a = DefaultMutableSignal(2.5f)
+        val b = DefaultMutableSignal(4.0f)
         val result = a * b
 
         assertThat(result.value).isEqualTo(10.0f)
@@ -881,8 +881,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Int divides two signals`() {
-        val a = CowMutableSignal(20)
-        val b = CowMutableSignal(4)
+        val a = DefaultMutableSignal(20)
+        val b = DefaultMutableSignal(4)
         val result = a / b
 
         assertThat(result.value).isEqualTo(5)
@@ -890,8 +890,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Long divides two signals`() {
-        val a = CowMutableSignal(20L)
-        val b = CowMutableSignal(4L)
+        val a = DefaultMutableSignal(20L)
+        val b = DefaultMutableSignal(4L)
         val result = a / b
 
         assertThat(result.value).isEqualTo(5L)
@@ -899,8 +899,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Double divides two signals`() {
-        val a = CowMutableSignal(10.0)
-        val b = CowMutableSignal(4.0)
+        val a = DefaultMutableSignal(10.0)
+        val b = DefaultMutableSignal(4.0)
         val result = a / b
 
         assertThat(result.value).isEqualTo(2.5)
@@ -908,8 +908,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Float divides two signals`() {
-        val a = CowMutableSignal(10.0f)
-        val b = CowMutableSignal(4.0f)
+        val a = DefaultMutableSignal(10.0f)
+        val b = DefaultMutableSignal(4.0f)
         val result = a / b
 
         assertThat(result.value).isEqualTo(2.5f)
@@ -919,8 +919,8 @@ class ExtensionsTest {
 
     @Test
     fun `rem Int computes remainder`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(3)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(3)
         val result = a % b
 
         assertThat(result.value).isEqualTo(1)
@@ -928,8 +928,8 @@ class ExtensionsTest {
 
     @Test
     fun `rem Long computes remainder`() {
-        val a = CowMutableSignal(10L)
-        val b = CowMutableSignal(3L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(3L)
         val result = a % b
 
         assertThat(result.value).isEqualTo(1L)
@@ -939,9 +939,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Int clamps value to range`() {
-        val value = CowMutableSignal(15)
-        val min = CowMutableSignal(0)
-        val max = CowMutableSignal(10)
+        val value = DefaultMutableSignal(15)
+        val min = DefaultMutableSignal(0)
+        val max = DefaultMutableSignal(10)
         val result = value.coerceIn(min, max)
 
         assertThat(result.value).isEqualTo(10)
@@ -955,9 +955,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Long clamps value to range`() {
-        val value = CowMutableSignal(15L)
-        val min = CowMutableSignal(0L)
-        val max = CowMutableSignal(10L)
+        val value = DefaultMutableSignal(15L)
+        val min = DefaultMutableSignal(0L)
+        val max = DefaultMutableSignal(10L)
         val result = value.coerceIn(min, max)
 
         assertThat(result.value).isEqualTo(10L)
@@ -965,9 +965,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Double clamps value to range`() {
-        val value = CowMutableSignal(15.0)
-        val min = CowMutableSignal(0.0)
-        val max = CowMutableSignal(10.0)
+        val value = DefaultMutableSignal(15.0)
+        val min = DefaultMutableSignal(0.0)
+        val max = DefaultMutableSignal(10.0)
         val result = value.coerceIn(min, max)
 
         assertThat(result.value).isEqualTo(10.0)
@@ -977,8 +977,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Int with signal`() {
-        val value = CowMutableSignal(5)
-        val min = CowMutableSignal(10)
+        val value = DefaultMutableSignal(5)
+        val min = DefaultMutableSignal(10)
         val result = value.coerceAtLeast(min)
 
         assertThat(result.value).isEqualTo(10)
@@ -989,7 +989,7 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Int with constant`() {
-        val value = CowMutableSignal(5)
+        val value = DefaultMutableSignal(5)
         val result = value.coerceAtLeast(10)
 
         assertThat(result.value).isEqualTo(10)
@@ -1000,8 +1000,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Long with signal`() {
-        val value = CowMutableSignal(5L)
-        val min = CowMutableSignal(10L)
+        val value = DefaultMutableSignal(5L)
+        val min = DefaultMutableSignal(10L)
         val result = value.coerceAtLeast(min)
 
         assertThat(result.value).isEqualTo(10L)
@@ -1009,8 +1009,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Double with signal`() {
-        val value = CowMutableSignal(5.0)
-        val min = CowMutableSignal(10.0)
+        val value = DefaultMutableSignal(5.0)
+        val min = DefaultMutableSignal(10.0)
         val result = value.coerceAtLeast(min)
 
         assertThat(result.value).isEqualTo(10.0)
@@ -1020,8 +1020,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Int with signal`() {
-        val value = CowMutableSignal(15)
-        val max = CowMutableSignal(10)
+        val value = DefaultMutableSignal(15)
+        val max = DefaultMutableSignal(10)
         val result = value.coerceAtMost(max)
 
         assertThat(result.value).isEqualTo(10)
@@ -1032,7 +1032,7 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Int with constant`() {
-        val value = CowMutableSignal(15)
+        val value = DefaultMutableSignal(15)
         val result = value.coerceAtMost(10)
 
         assertThat(result.value).isEqualTo(10)
@@ -1040,8 +1040,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Long with signal`() {
-        val value = CowMutableSignal(15L)
-        val max = CowMutableSignal(10L)
+        val value = DefaultMutableSignal(15L)
+        val max = DefaultMutableSignal(10L)
         val result = value.coerceAtMost(max)
 
         assertThat(result.value).isEqualTo(10L)
@@ -1049,8 +1049,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Double with signal`() {
-        val value = CowMutableSignal(15.0)
-        val max = CowMutableSignal(10.0)
+        val value = DefaultMutableSignal(15.0)
+        val max = DefaultMutableSignal(10.0)
         val result = value.coerceAtMost(max)
 
         assertThat(result.value).isEqualTo(10.0)
@@ -1064,8 +1064,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Int compares signals`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(5)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(5)
         val result = a gt b
 
         assertThat(result.value).isTrue()
@@ -1076,8 +1076,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Long compares signals`() {
-        val a = CowMutableSignal(10L)
-        val b = CowMutableSignal(5L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(5L)
         val result = a gt b
 
         assertThat(result.value).isTrue()
@@ -1085,8 +1085,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Double compares signals`() {
-        val a = CowMutableSignal(10.0)
-        val b = CowMutableSignal(5.0)
+        val a = DefaultMutableSignal(10.0)
+        val b = DefaultMutableSignal(5.0)
         val result = a gt b
 
         assertThat(result.value).isTrue()
@@ -1096,8 +1096,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Int compares signals`() {
-        val a = CowMutableSignal(3)
-        val b = CowMutableSignal(5)
+        val a = DefaultMutableSignal(3)
+        val b = DefaultMutableSignal(5)
         val result = a lt b
 
         assertThat(result.value).isTrue()
@@ -1108,8 +1108,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Long compares signals`() {
-        val a = CowMutableSignal(3L)
-        val b = CowMutableSignal(5L)
+        val a = DefaultMutableSignal(3L)
+        val b = DefaultMutableSignal(5L)
         val result = a lt b
 
         assertThat(result.value).isTrue()
@@ -1117,8 +1117,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Double compares signals`() {
-        val a = CowMutableSignal(3.0)
-        val b = CowMutableSignal(5.0)
+        val a = DefaultMutableSignal(3.0)
+        val b = DefaultMutableSignal(5.0)
         val result = a lt b
 
         assertThat(result.value).isTrue()
@@ -1128,8 +1128,8 @@ class ExtensionsTest {
 
     @Test
     fun `eq compares signals for equality`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(10)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(10)
         val result = a eq b
 
         assertThat(result.value).isTrue()
@@ -1140,8 +1140,8 @@ class ExtensionsTest {
 
     @Test
     fun `eq works with strings`() {
-        val a = CowMutableSignal("hello")
-        val b = CowMutableSignal("hello")
+        val a = DefaultMutableSignal("hello")
+        val b = DefaultMutableSignal("hello")
         val result = a eq b
 
         assertThat(result.value).isTrue()
@@ -1151,8 +1151,8 @@ class ExtensionsTest {
 
     @Test
     fun `neq compares signals for inequality`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val result = a neq b
 
         assertThat(result.value).isTrue()
@@ -1169,8 +1169,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus String concatenates signals`() {
-        val a = CowMutableSignal("Hello")
-        val b = CowMutableSignal(" World")
+        val a = DefaultMutableSignal("Hello")
+        val b = DefaultMutableSignal(" World")
         val result = a + b
 
         assertThat(result.value).isEqualTo("Hello World")
@@ -1180,7 +1180,7 @@ class ExtensionsTest {
 
     @Test
     fun `isEmpty String returns true for empty`() {
-        val source = CowMutableSignal("")
+        val source = DefaultMutableSignal("")
         val result = source.isEmpty()
 
         assertThat(result.value).isTrue()
@@ -1193,7 +1193,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotEmpty String returns true for non-empty`() {
-        val source = CowMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.isNotEmpty()
 
         assertThat(result.value).isTrue()
@@ -1206,7 +1206,7 @@ class ExtensionsTest {
 
     @Test
     fun `isBlank returns true for blank strings`() {
-        val source = CowMutableSignal("   ")
+        val source = DefaultMutableSignal("   ")
         val result = source.isBlank()
 
         assertThat(result.value).isTrue()
@@ -1219,7 +1219,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotBlank returns true for non-blank strings`() {
-        val source = CowMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.isNotBlank()
 
         assertThat(result.value).isTrue()
@@ -1232,7 +1232,7 @@ class ExtensionsTest {
 
     @Test
     fun `length returns string length`() {
-        val source = CowMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.length()
 
         assertThat(result.value).isEqualTo(5)
@@ -1245,7 +1245,7 @@ class ExtensionsTest {
 
     @Test
     fun `trim removes whitespace`() {
-        val source = CowMutableSignal("  hello  ")
+        val source = DefaultMutableSignal("  hello  ")
         val result = source.trim()
 
         assertThat(result.value).isEqualTo("hello")
@@ -1255,7 +1255,7 @@ class ExtensionsTest {
 
     @Test
     fun `uppercase converts to uppercase`() {
-        val source = CowMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.uppercase()
 
         assertThat(result.value).isEqualTo("HELLO")
@@ -1265,7 +1265,7 @@ class ExtensionsTest {
 
     @Test
     fun `lowercase converts to lowercase`() {
-        val source = CowMutableSignal("HELLO")
+        val source = DefaultMutableSignal("HELLO")
         val result = source.lowercase()
 
         assertThat(result.value).isEqualTo("hello")
@@ -1279,7 +1279,7 @@ class ExtensionsTest {
 
     @Test
     fun `size returns list size`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.size()
 
         assertThat(result.value).isEqualTo(3)
@@ -1292,7 +1292,7 @@ class ExtensionsTest {
 
     @Test
     fun `isEmpty List returns true for empty list`() {
-        val source = CowMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.isEmpty()
 
         assertThat(result.value).isTrue()
@@ -1305,7 +1305,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotEmpty List returns true for non-empty list`() {
-        val source = CowMutableSignal(listOf(1, 2))
+        val source = DefaultMutableSignal(listOf(1, 2))
         val result = source.isNotEmpty()
 
         assertThat(result.value).isTrue()
@@ -1318,7 +1318,7 @@ class ExtensionsTest {
 
     @Test
     fun `firstOrNull returns first element`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.firstOrNull()
 
         assertThat(result.value).isEqualTo(1)
@@ -1326,7 +1326,7 @@ class ExtensionsTest {
 
     @Test
     fun `firstOrNull returns null for empty list`() {
-        val source = CowMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.firstOrNull()
 
         assertThat(result.value).isNull()
@@ -1336,7 +1336,7 @@ class ExtensionsTest {
 
     @Test
     fun `lastOrNull returns last element`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.lastOrNull()
 
         assertThat(result.value).isEqualTo(3)
@@ -1344,7 +1344,7 @@ class ExtensionsTest {
 
     @Test
     fun `lastOrNull returns null for empty list`() {
-        val source = CowMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.lastOrNull()
 
         assertThat(result.value).isNull()
@@ -1354,7 +1354,7 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull returns element at index`() {
-        val source = CowMutableSignal(listOf(10, 20, 30))
+        val source = DefaultMutableSignal(listOf(10, 20, 30))
         val result = source.getOrNull(1)
 
         assertThat(result.value).isEqualTo(20)
@@ -1362,7 +1362,7 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull returns null for out of bounds`() {
-        val source = CowMutableSignal(listOf(10, 20))
+        val source = DefaultMutableSignal(listOf(10, 20))
         val result = source.getOrNull(5)
 
         assertThat(result.value).isNull()
@@ -1370,8 +1370,8 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull with signal index`() {
-        val source = CowMutableSignal(listOf(10, 20, 30))
-        val index = CowMutableSignal(2)
+        val source = DefaultMutableSignal(listOf(10, 20, 30))
+        val index = DefaultMutableSignal(2)
         val result = source.getOrNull(index)
 
         assertThat(result.value).isEqualTo(30)
@@ -1384,7 +1384,7 @@ class ExtensionsTest {
 
     @Test
     fun `contains checks element presence`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.contains(2)
 
         assertThat(result.value).isTrue()
@@ -1392,7 +1392,7 @@ class ExtensionsTest {
 
     @Test
     fun `contains returns false for missing element`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.contains(5)
 
         assertThat(result.value).isFalse()
@@ -1400,8 +1400,8 @@ class ExtensionsTest {
 
     @Test
     fun `contains with signal element`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
-        val element = CowMutableSignal(2)
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
+        val element = DefaultMutableSignal(2)
         val result = source.contains(element)
 
         assertThat(result.value).isTrue()
@@ -1414,7 +1414,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterList filters list elements`() {
-        val source = CowMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.filterList { it > 2 }
 
         assertThat(result.value).isEqualTo(listOf(3, 4, 5))
@@ -1424,7 +1424,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapList transforms list elements`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.mapList { it * 2 }
 
         assertThat(result.value).isEqualTo(listOf(2, 4, 6))
@@ -1434,7 +1434,7 @@ class ExtensionsTest {
 
     @Test
     fun `flatMapList flatMaps list elements`() {
-        val source = CowMutableSignal(listOf(1, 2))
+        val source = DefaultMutableSignal(listOf(1, 2))
         val result = source.flatMapList { listOf(it, it * 10) }
 
         assertThat(result.value).isEqualTo(listOf(1, 10, 2, 20))
@@ -1444,7 +1444,7 @@ class ExtensionsTest {
 
     @Test
     fun `sorted sorts list ascending`() {
-        val source = CowMutableSignal(listOf(3, 1, 4, 1, 5))
+        val source = DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
         val result = source.sorted()
 
         assertThat(result.value).isEqualTo(listOf(1, 1, 3, 4, 5))
@@ -1454,7 +1454,7 @@ class ExtensionsTest {
 
     @Test
     fun `sortedDescending sorts list descending`() {
-        val source = CowMutableSignal(listOf(3, 1, 4, 1, 5))
+        val source = DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
         val result = source.sortedDescending()
 
         assertThat(result.value).isEqualTo(listOf(5, 4, 3, 1, 1))
@@ -1465,7 +1465,7 @@ class ExtensionsTest {
     @Test
     fun `sortedBy sorts by selector`() {
         data class Person(val name: String, val age: Int)
-        val source = CowMutableSignal(listOf(
+        val source = DefaultMutableSignal(listOf(
             Person("Bob", 30),
             Person("Alice", 25),
             Person("Charlie", 35)
@@ -1479,7 +1479,7 @@ class ExtensionsTest {
 
     @Test
     fun `reversed reverses list`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.reversed()
 
         assertThat(result.value).isEqualTo(listOf(3, 2, 1))
@@ -1489,7 +1489,7 @@ class ExtensionsTest {
 
     @Test
     fun `take returns first n elements`() {
-        val source = CowMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.take(3)
 
         assertThat(result.value).isEqualTo(listOf(1, 2, 3))
@@ -1499,7 +1499,7 @@ class ExtensionsTest {
 
     @Test
     fun `drop removes first n elements`() {
-        val source = CowMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.drop(2)
 
         assertThat(result.value).isEqualTo(listOf(3, 4, 5))
@@ -1509,7 +1509,7 @@ class ExtensionsTest {
 
     @Test
     fun `distinct removes duplicates`() {
-        val source = CowMutableSignal(listOf(1, 2, 2, 3, 1))
+        val source = DefaultMutableSignal(listOf(1, 2, 2, 3, 1))
         val result = source.distinct()
 
         assertThat(result.value).isEqualTo(listOf(1, 2, 3))
@@ -1519,7 +1519,7 @@ class ExtensionsTest {
 
     @Test
     fun `joinToString joins elements`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.joinToString(", ")
 
         assertThat(result.value).isEqualTo("1, 2, 3")
@@ -1527,7 +1527,7 @@ class ExtensionsTest {
 
     @Test
     fun `joinToString with prefix and postfix`() {
-        val source = CowMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.joinToString(", ", "[", "]")
 
         assertThat(result.value).isEqualTo("[1, 2, 3]")
@@ -1541,7 +1541,7 @@ class ExtensionsTest {
 
     @Test
     fun `orDefault provides default for null`() {
-        val source = CowMutableSignal<Int?>(null)
+        val source = DefaultMutableSignal<Int?>(null)
         val result = source.orDefault(42)
 
         assertThat(result.value).isEqualTo(42)
@@ -1552,8 +1552,8 @@ class ExtensionsTest {
 
     @Test
     fun `orDefault with signal provides default`() {
-        val source = CowMutableSignal<Int?>(null)
-        val default = CowMutableSignal(42)
+        val source = DefaultMutableSignal<Int?>(null)
+        val default = DefaultMutableSignal(42)
         val result = source.orDefault(default)
 
         assertThat(result.value).isEqualTo(42)
@@ -1570,8 +1570,8 @@ class ExtensionsTest {
 
     @Test
     fun `orElse is alias for orDefault`() {
-        val source = CowMutableSignal<Int?>(null)
-        val fallback = CowMutableSignal(42)
+        val source = DefaultMutableSignal<Int?>(null)
+        val fallback = DefaultMutableSignal(42)
         val result = source.orElse(fallback)
 
         assertThat(result.value).isEqualTo(42)
@@ -1581,7 +1581,7 @@ class ExtensionsTest {
 
     @Test
     fun `onEach executes side effect`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val sideEffects = mutableListOf<Int>()
         val result = source.onEach { sideEffects.add(it) }
 
@@ -1597,7 +1597,7 @@ class ExtensionsTest {
 
     @Test
     fun `tap is alias for onEach`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val tapped = mutableListOf<Int>()
         val result = source.tap { tapped.add(it) }
 
@@ -1609,7 +1609,7 @@ class ExtensionsTest {
 
     @Test
     fun `isPresent returns true for non-null`() {
-        val source = CowMutableSignal<Int?>(10)
+        val source = DefaultMutableSignal<Int?>(10)
         val result = source.isPresent()
 
         assertThat(result.value).isTrue()
@@ -1622,7 +1622,7 @@ class ExtensionsTest {
 
     @Test
     fun `isAbsent returns true for null`() {
-        val source = CowMutableSignal<Int?>(null)
+        val source = DefaultMutableSignal<Int?>(null)
         val result = source.isAbsent()
 
         assertThat(result.value).isTrue()
@@ -1864,7 +1864,7 @@ class ExtensionsTest {
 
     @Test
     fun `operators can be chained`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val result = source
             .map { it * 2 }
             .map { it + 5 }
@@ -1878,8 +1878,8 @@ class ExtensionsTest {
 
     @Test
     fun `combine and map can be chained`() {
-        val a = CowMutableSignal(10)
-        val b = CowMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val result = combine(a, b) { x, y -> x + y }
             .map { it * 2 }
             .mapToString()
@@ -1891,11 +1891,11 @@ class ExtensionsTest {
 
     @Test
     fun `changes propagate through chain`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val doubled = source.map { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
-        doubled.subscribe { it.onRight { v -> values.add(v) } }
+        doubled.subscribe { it.onSuccess { v -> values.add(v) } }
 
         source.value = 20
         source.value = 30

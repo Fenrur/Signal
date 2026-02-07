@@ -42,18 +42,18 @@ class SignalPublisher<T>(private val signal: Signal<T>) : Publisher<T> {
             }
         })
 
-        unsubscribe = signal.subscribe { either ->
+        unsubscribe = signal.subscribe { result ->
             if (cancelled.get()) return@subscribe
-            either.fold(
-                { error ->
-                    subscriber.onError(error)
-                    cancelled.set(true)
-                },
-                { value ->
+            result.fold(
+                onSuccess = { value ->
                     if (requested.get() > 0) {
                         requested.decrementAndGet()
                         subscriber.onNext(value)
                     }
+                },
+                onFailure = { error ->
+                    subscriber.onError(error)
+                    cancelled.set(true)
                 }
             )
         }

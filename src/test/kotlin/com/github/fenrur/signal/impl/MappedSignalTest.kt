@@ -10,7 +10,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal transforms value`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         assertThat(mapped.value).isEqualTo(20)
@@ -18,7 +18,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal updates when source changes`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         source.value = 20
@@ -28,11 +28,11 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal notifies subscribers`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
 
         source.value = 20
         source.value = 30
@@ -42,7 +42,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal does not notify if transformed value is same`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it / 10 } // 10 -> 1, 15 -> 1
         val callCount = AtomicInteger(0)
 
@@ -55,7 +55,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal can chain transformations`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val doubled = MappedSignal(source) { it * 2 }
         val stringified = MappedSignal(doubled) { "Value: $it" }
 
@@ -67,7 +67,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal closes properly`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
 
         assertThat(mapped.isClosed).isFalse()
@@ -79,11 +79,11 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal stops receiving after close`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
-        mapped.subscribe { it.onRight { v -> values.add(v) } }
+        mapped.subscribe { it.onSuccess { v -> values.add(v) } }
         mapped.close()
         values.clear()
 
@@ -94,7 +94,7 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal can transform to different type`() {
-        val source = CowMutableSignal(42)
+        val source = DefaultMutableSignal(42)
         val mapped: Signal<String> = MappedSignal(source) { "Number: $it" }
 
         assertThat(mapped.value).isEqualTo("Number: 42")
@@ -102,14 +102,14 @@ class MappedSignalTest {
 
     @Test
     fun `mapped signal propagates errors`() {
-        val source = CowMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
         val errors = CopyOnWriteArrayList<Throwable>()
 
-        mapped.subscribe { either ->
-            either.fold(
-                { errors.add(it) },
-                { }
+        mapped.subscribe { result ->
+            result.fold(
+                onSuccess = { },
+                onFailure = { errors.add(it) }
             )
         }
 

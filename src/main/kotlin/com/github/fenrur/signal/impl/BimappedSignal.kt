@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -37,14 +36,14 @@ class BimappedSignal<S, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { either ->
+            unsubscribeSource.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { sv ->
+                result.fold(
+                    onSuccess = { sv ->
                         val mapped = forward(sv)
                         notifyAllValue(listeners.toList(), mapped)
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -78,7 +77,7 @@ class BimappedSignal<S, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

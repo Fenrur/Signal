@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -30,11 +29,10 @@ class PairwiseSignal<T>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { either ->
+            unsubscribeSource.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { newValue ->
+                result.fold(
+                    onSuccess = { newValue ->
                         // Skip if this is the same value we already processed
                         val lastSeen = lastSourceValue.getAndSet(newValue)
                         if (lastSeen != newValue) {
@@ -43,7 +41,8 @@ class PairwiseSignal<T>(
                             currentPair.set(newPair)
                             notifyAllValue(listeners.toList(), newPair)
                         }
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -61,7 +60,7 @@ class PairwiseSignal<T>(
     override fun subscribe(listener: SubscribeListener<Pair<T, T>>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

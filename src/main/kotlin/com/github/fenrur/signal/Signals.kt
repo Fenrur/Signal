@@ -19,17 +19,17 @@ import org.reactivestreams.Publisher
  * @param initial the value of the signal
  * @return a read-only signal
  */
-fun <T> signalOf(initial: T): Signal<T> = CowMutableSignal(initial)
+fun <T> signalOf(initial: T): Signal<T> = DefaultMutableSignal(initial)
 
 /**
  * Creates a [MutableSignal] with the given initial value.
  *
- * Uses the default [CowMutableSignal] implementation which is optimized for read-intensive scenarios.
+ * Uses the default [DefaultMutableSignal] implementation which is optimized for read-intensive scenarios.
  *
  * @param initial the initial value of the signal
  * @return a mutable signal
  */
-fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowMutableSignal(initial)
+fun <T> mutableSignalOf(initial: T): MutableSignal<T> = DefaultMutableSignal(initial)
 
 /**
  * Creates a [BindableSignal] optionally bound to an initial signal.
@@ -41,7 +41,7 @@ fun <T> mutableSignalOf(initial: T): MutableSignal<T> = CowMutableSignal(initial
 fun <T> bindableSignalOf(
     initialSignal: Signal<T>? = null,
     takeOwnership: Boolean = false
-): BindableSignal<T> = CowBindableSignal(initialSignal, takeOwnership)
+): BindableSignal<T> = DefaultBindableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [BindableSignal] with an initial value.
@@ -55,7 +55,7 @@ fun <T> bindableSignalOf(
 fun <T> bindableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): BindableSignal<T> = CowBindableSignal(signalOf(initialValue), takeOwnership)
+): BindableSignal<T> = DefaultBindableSignal(signalOf(initialValue), takeOwnership)
 
 /**
  * Creates a [BindableMutableSignal] optionally bound to an initial signal.
@@ -67,7 +67,7 @@ fun <T> bindableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialSignal: MutableSignal<T>? = null,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = CowBindableMutableSignal(initialSignal, takeOwnership)
+): BindableMutableSignal<T> = DefaultBindableMutableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [BindableMutableSignal] with an initial value.
@@ -81,7 +81,7 @@ fun <T> bindableMutableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): BindableMutableSignal<T> = CowBindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
+): BindableMutableSignal<T> = DefaultBindableMutableSignal(mutableSignalOf(initialValue), takeOwnership)
 
 // =============================================================================
 // JDK FLOW INTEGRATION (Java 9+)
@@ -152,25 +152,25 @@ fun <T> Publisher<T>.asSignal(initial: T, request: Long = Long.MAX_VALUE): React
  * @return a Flow that emits signal values
  */
 fun <T> Signal<T>.asFlow(): Flow<T> = callbackFlow {
-    val unsubscribe = subscribe { either ->
-        either.fold(
-            { error -> close(error) },
-            { value -> trySend(value) }
+    val unsubscribe = subscribe { result ->
+        result.fold(
+            onSuccess = { value -> trySend(value) },
+            onFailure = { error -> close(error) }
         )
     }
     awaitClose { unsubscribe() }
 }
 
 /**
- * Converts this [Signal] to a Kotlin [Flow] that emits [Either] values.
+ * Converts this [Signal] to a Kotlin [Flow] that emits [Result] values.
  *
  * This allows handling both values and errors in the flow.
  *
- * @return a Flow that emits Either values
+ * @return a Flow that emits Result values
  */
-fun <T> Signal<T>.asEitherFlow(): Flow<Either<Throwable, T>> = callbackFlow {
-    val unsubscribe = subscribe { either ->
-        trySend(either)
+fun <T> Signal<T>.asResultFlow(): Flow<Result<T>> = callbackFlow {
+    val unsubscribe = subscribe { result ->
+        trySend(result)
     }
     awaitClose { unsubscribe() }
 }

@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -36,14 +35,14 @@ class WithLatestFromSignal<A, B, R>(
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
             // Only subscribe to source - we sample other on each source emission
-            unsubscribeSource.set(source.subscribe { either ->
+            unsubscribeSource.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { sourceValue ->
+                result.fold(
+                    onSuccess = { sourceValue ->
                         val combined = combiner(sourceValue, other.value)
                         notifyAllValue(listeners.toList(), combined)
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -61,7 +60,7 @@ class WithLatestFromSignal<A, B, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

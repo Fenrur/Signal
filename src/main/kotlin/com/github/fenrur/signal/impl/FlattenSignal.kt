@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -34,16 +33,16 @@ class FlattenSignal<T>(
             subscribeToInner(source.value)
 
             // Subscribe to outer signal to switch inner subscriptions
-            unsubscribeOuter.set(source.subscribe { either ->
+            unsubscribeOuter.set(source.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { innerSignal ->
+                result.fold(
+                    onSuccess = { innerSignal ->
                         // Unsubscribe from previous inner
                         innerUnsubscribe.getAndSet {}.invoke()
                         // Subscribe to new inner
                         subscribeToInner(innerSignal)
-                    }
+                    },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -57,11 +56,11 @@ class FlattenSignal<T>(
     }
 
     private fun subscribeToInner(inner: Signal<T>) {
-        val unsub = inner.subscribe { either ->
+        val unsub = inner.subscribe { result ->
             if (closed.get()) return@subscribe
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { value -> notifyAllValue(listeners.toList(), value) }
+            result.fold(
+                onSuccess = { value -> notifyAllValue(listeners.toList(), value) },
+                onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
             )
         }
         innerUnsubscribe.set(unsub)
@@ -73,7 +72,7 @@ class FlattenSignal<T>(
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -19,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @param T the type of value held by the signal
  * @param initial the value of the signal
  */
-class CowSignal<T>(initial: T) : Signal<T> {
+class DefaultSignal<T>(initial: T) : Signal<T> {
 
     private val ref = AtomicReference(initial)
     private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
@@ -33,7 +32,7 @@ class CowSignal<T>(initial: T) : Signal<T> {
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }
@@ -44,5 +43,5 @@ class CowSignal<T>(initial: T) : Signal<T> {
         }
     }
 
-    override fun toString(): String = "CowSignal(value=$value, isClosed=$isClosed)"
+    override fun toString(): String = "DefaultSignal(value=$value, isClosed=$isClosed)"
 }

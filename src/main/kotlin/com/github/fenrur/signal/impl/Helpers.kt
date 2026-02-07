@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.SubscribeListener
 
 /**
@@ -9,7 +8,7 @@ import com.github.fenrur.signal.SubscribeListener
 internal fun <T> notifyAllValue(listeners: Iterable<SubscribeListener<T>>, value: T) {
     for (l in listeners) {
         try {
-            l(Either.Right(value))
+            l(Result.success(value))
         } catch (_: Throwable) {
             // Ignore listener exceptions
         }
@@ -22,7 +21,7 @@ internal fun <T> notifyAllValue(listeners: Iterable<SubscribeListener<T>>, value
 internal fun <T> notifyAllError(listeners: Iterable<SubscribeListener<T>>, ex: Throwable) {
     for (l in listeners) {
         try {
-            l(Either.Left(ex))
+            l(Result.failure(ex))
         } catch (_: Throwable) {
             // Ignore listener exceptions
         }

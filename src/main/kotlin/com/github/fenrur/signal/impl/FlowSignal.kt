@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -80,7 +79,7 @@ class FlowSignal<T>(
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.get()) return {}
         when (val current = ref.get()) {
-            is OptionalValue.Present -> listener(Either.Right(current.value))
+            is OptionalValue.Present -> listener(Result.success(current.value))
             is OptionalValue.Absent -> { /* No initial emission until a value is received */ }
         }
         listeners += listener

@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -26,18 +25,18 @@ class CombinedSignal2<A, B, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubA.set(sa.subscribe { either ->
+            unsubA.set(sa.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { va -> notifyUpdate(va, sb.value) }
+                result.fold(
+                    onSuccess = { va -> notifyUpdate(va, sb.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubB.set(sb.subscribe { either ->
+            unsubB.set(sb.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vb -> notifyUpdate(sa.value, vb) }
+                result.fold(
+                    onSuccess = { vb -> notifyUpdate(sa.value, vb) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -61,7 +60,7 @@ class CombinedSignal2<A, B, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener
@@ -102,25 +101,25 @@ class CombinedSignal3<A, B, C, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubA.set(sa.subscribe { either ->
+            unsubA.set(sa.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { va -> notifyUpdate(va, sb.value, sc.value) }
+                result.fold(
+                    onSuccess = { va -> notifyUpdate(va, sb.value, sc.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubB.set(sb.subscribe { either ->
+            unsubB.set(sb.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vb -> notifyUpdate(sa.value, vb, sc.value) }
+                result.fold(
+                    onSuccess = { vb -> notifyUpdate(sa.value, vb, sc.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubC.set(sc.subscribe { either ->
+            unsubC.set(sc.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vc -> notifyUpdate(sa.value, sb.value, vc) }
+                result.fold(
+                    onSuccess = { vc -> notifyUpdate(sa.value, sb.value, vc) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -145,7 +144,7 @@ class CombinedSignal3<A, B, C, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener
@@ -189,32 +188,32 @@ class CombinedSignal4<A, B, C, D, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubA.set(sa.subscribe { either ->
+            unsubA.set(sa.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value) }
+                result.fold(
+                    onSuccess = { va -> notifyUpdate(va, sb.value, sc.value, sd.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubB.set(sb.subscribe { either ->
+            unsubB.set(sb.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value) }
+                result.fold(
+                    onSuccess = { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubC.set(sc.subscribe { either ->
+            unsubC.set(sc.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value) }
+                result.fold(
+                    onSuccess = { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubD.set(sd.subscribe { either ->
+            unsubD.set(sd.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd) }
+                result.fold(
+                    onSuccess = { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -240,7 +239,7 @@ class CombinedSignal4<A, B, C, D, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener
@@ -287,39 +286,39 @@ class CombinedSignal5<A, B, C, D, E, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubA.set(sa.subscribe { either ->
+            unsubA.set(sa.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value) }
+                result.fold(
+                    onSuccess = { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubB.set(sb.subscribe { either ->
+            unsubB.set(sb.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value) }
+                result.fold(
+                    onSuccess = { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubC.set(sc.subscribe { either ->
+            unsubC.set(sc.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value) }
+                result.fold(
+                    onSuccess = { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubD.set(sd.subscribe { either ->
+            unsubD.set(sd.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value) }
+                result.fold(
+                    onSuccess = { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubE.set(se.subscribe { either ->
+            unsubE.set(se.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve) }
+                result.fold(
+                    onSuccess = { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -346,7 +345,7 @@ class CombinedSignal5<A, B, C, D, E, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener
@@ -396,46 +395,46 @@ class CombinedSignal6<A, B, C, D, E, F, R>(
 
     private fun ensureSubscribed() {
         if (subscribed.compareAndSet(false, true)) {
-            unsubA.set(sa.subscribe { either ->
+            unsubA.set(sa.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value, sf.value) }
+                result.fold(
+                    onSuccess = { va -> notifyUpdate(va, sb.value, sc.value, sd.value, se.value, sf.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubB.set(sb.subscribe { either ->
+            unsubB.set(sb.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value, sf.value) }
+                result.fold(
+                    onSuccess = { vb -> notifyUpdate(sa.value, vb, sc.value, sd.value, se.value, sf.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubC.set(sc.subscribe { either ->
+            unsubC.set(sc.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value, sf.value) }
+                result.fold(
+                    onSuccess = { vc -> notifyUpdate(sa.value, sb.value, vc, sd.value, se.value, sf.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubD.set(sd.subscribe { either ->
+            unsubD.set(sd.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value, sf.value) }
+                result.fold(
+                    onSuccess = { vd -> notifyUpdate(sa.value, sb.value, sc.value, vd, se.value, sf.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubE.set(se.subscribe { either ->
+            unsubE.set(se.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve, sf.value) }
+                result.fold(
+                    onSuccess = { ve -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, ve, sf.value) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
-            unsubF.set(sf.subscribe { either ->
+            unsubF.set(sf.subscribe { result ->
                 if (closed.get()) return@subscribe
-                either.fold(
-                    { ex -> notifyAllError(listeners.toList(), ex) },
-                    { vf -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, se.value, vf) }
+                result.fold(
+                    onSuccess = { vf -> notifyUpdate(sa.value, sb.value, sc.value, sd.value, se.value, vf) },
+                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
                 )
             })
         }
@@ -463,7 +462,7 @@ class CombinedSignal6<A, B, C, D, E, F, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (closed.get()) return {}
         ensureSubscribed()
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return {
             listeners -= listener

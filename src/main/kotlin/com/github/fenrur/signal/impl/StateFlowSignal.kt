@@ -1,6 +1,5 @@
 package com.github.fenrur.signal.impl
 
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -51,7 +50,7 @@ class StateFlowSignal<T>(
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.get()) return {}
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }

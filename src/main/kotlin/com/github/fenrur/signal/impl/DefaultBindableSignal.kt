@@ -1,7 +1,6 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.BindableSignal
-import com.github.fenrur.signal.Either
 import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.SubscribeListener
 import com.github.fenrur.signal.UnSubscriber
@@ -18,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @param initial optional initial signal to bind to
  * @param takeOwnership if true, closes bound signals when unbinding or closing
  */
-class CowBindableSignal<T>(
+class DefaultBindableSignal<T>(
     initial: Signal<T>? = null,
     private val takeOwnership: Boolean = false
 ) : BindableSignal<T> {
@@ -43,7 +42,7 @@ class CowBindableSignal<T>(
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
-        listener(Either.Right(value))
+        listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }
@@ -73,11 +72,11 @@ class CowBindableSignal<T>(
             throw IllegalStateException("Circular binding detected: binding would create a cycle")
         }
 
-        val unSub = newSignal.subscribe { either ->
+        val unSub = newSignal.subscribe { result ->
             if (isClosed) return@subscribe
-            either.fold(
-                { ex -> notifyAllError(listeners.toList(), ex) },
-                { v -> notifyAllValue(listeners.toList(), v) }
+            result.fold(
+                onSuccess = { v -> notifyAllValue(listeners.toList(), v) },
+                onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
             )
         }
 
@@ -113,6 +112,6 @@ class CowBindableSignal<T>(
         } catch (_: IllegalStateException) {
             "<not bound>"
         }
-        return "CowBindableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
+        return "DefaultBindableSignal(value=$boundValue, isClosed=$isClosed, isBound=${isBound()})"
     }
 }

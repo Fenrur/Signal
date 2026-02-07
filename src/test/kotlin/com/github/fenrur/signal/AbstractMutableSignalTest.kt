@@ -34,7 +34,7 @@ abstract class AbstractMutableSignalTest : AbstractSignalTest<MutableSignal<Int>
         val signal = createSignal(42)
         val values = CopyOnWriteArrayList<Int>()
 
-        signal.subscribe { it.onRight { v -> values.add(v) } }
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
 
         signal.value = 100
         signal.value = 200
@@ -71,7 +71,7 @@ abstract class AbstractMutableSignalTest : AbstractSignalTest<MutableSignal<Int>
         val signal = createSignal(42)
         val values = CopyOnWriteArrayList<Int>()
 
-        val unsubscribe = signal.subscribe { it.onRight { v -> values.add(v) } }
+        val unsubscribe = signal.subscribe { it.onSuccess { v -> values.add(v) } }
 
         signal.value = 100
         unsubscribe()
@@ -94,7 +94,7 @@ abstract class AbstractMutableSignalTest : AbstractSignalTest<MutableSignal<Int>
         val signal = createSignal(42)
         val values = CopyOnWriteArrayList<Int>()
 
-        signal.subscribe { it.onRight { v -> values.add(v) } }
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
 
         signal.update { it * 2 }
 

@@ -13,9 +13,6 @@ repositories {
 }
 
 dependencies {
-    // Arrow is optional - users must add it themselves to use asArrow() extensions
-    compileOnly("io.arrow-kt:arrow-core:2.0.1")
-
     // Kotlin Coroutines Flow is optional
     compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 
@@ -24,7 +21,6 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.27.7")
-    testImplementation("io.arrow-kt:arrow-core:2.0.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     testImplementation("org.reactivestreams:reactive-streams:1.0.4")
 }

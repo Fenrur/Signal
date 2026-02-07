@@ -11,18 +11,18 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 
-class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
+class DefaultBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
 
     override fun createSignal(initial: Int): Signal<Int> {
         val source = signalOf(initial)
-        return CowBindableSignal(source)
+        return DefaultBindableSignal(source)
     }
 
     // ==================== DefaultBindableSignal specific tests ====================
 
     @Test
     fun `unbound signal throws on value access`() {
-        val signal = CowBindableSignal<Int>()
+        val signal = DefaultBindableSignal<Int>()
 
         assertThatThrownBy { signal.value }
             .isInstanceOf(IllegalStateException::class.java)
@@ -33,7 +33,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     fun `bindTo changes the underlying signal`() {
         val source1 = mutableSignalOf(10)
         val source2 = mutableSignalOf(20)
-        val signal = CowBindableSignal(source1)
+        val signal = DefaultBindableSignal(source1)
 
         assertThat(signal.value).isEqualTo(10)
 
@@ -46,10 +46,10 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     fun `bindTo notifies subscribers with new value`() {
         val source1 = mutableSignalOf(10)
         val source2 = mutableSignalOf(20)
-        val signal = CowBindableSignal(source1)
+        val signal = DefaultBindableSignal(source1)
         val values = CopyOnWriteArrayList<Int>()
 
-        signal.subscribe { it.onRight { v -> values.add(v) } }
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
         values.clear()
 
         signal.bindTo(source2)
@@ -61,10 +61,10 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     fun `changes to new source are propagated`() {
         val source1 = mutableSignalOf(10)
         val source2 = mutableSignalOf(20)
-        val signal = CowBindableSignal<Int>(source1)
+        val signal = DefaultBindableSignal<Int>(source1)
         val values = CopyOnWriteArrayList<Int>()
 
-        signal.subscribe { it.onRight { v -> values.add(v) } }
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
         signal.bindTo(source2)
         values.clear()
 
@@ -78,10 +78,10 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     fun `changes to old source are not propagated after rebind`() {
         val source1 = mutableSignalOf(10)
         val source2 = mutableSignalOf(20)
-        val signal = CowBindableSignal<Int>(source1)
+        val signal = DefaultBindableSignal<Int>(source1)
         val values = CopyOnWriteArrayList<Int>()
 
-        signal.subscribe { it.onRight { v -> values.add(v) } }
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
         signal.bindTo(source2)
         values.clear()
 
@@ -94,7 +94,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     @Test
     fun `can bind to read-only signal`() {
         val readOnly = signalOf(42)
-        val signal = CowBindableSignal(readOnly)
+        val signal = DefaultBindableSignal(readOnly)
 
         assertThat(signal.value).isEqualTo(42)
     }
@@ -103,7 +103,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     fun `takeOwnership closes old signal on rebind`() {
         val source1 = mutableSignalOf(10)
         val source2 = mutableSignalOf(20)
-        val signal = CowBindableSignal(source1, takeOwnership = true)
+        val signal = DefaultBindableSignal(source1, takeOwnership = true)
 
         assertThat(source1.isClosed).isFalse()
 
@@ -116,7 +116,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     @Test
     fun `takeOwnership closes source on close`() {
         val source = mutableSignalOf(10)
-        val signal = CowBindableSignal(source, takeOwnership = true)
+        val signal = DefaultBindableSignal(source, takeOwnership = true)
 
         signal.close()
 
@@ -126,7 +126,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     @Test
     fun `without takeOwnership source is not closed`() {
         val source = mutableSignalOf(10)
-        val signal = CowBindableSignal(source, takeOwnership = false)
+        val signal = DefaultBindableSignal(source, takeOwnership = false)
 
         signal.close()
 
@@ -135,7 +135,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
 
     @Test
     fun `isBound returns correct state`() {
-        val signal = CowBindableSignal<Int>()
+        val signal = DefaultBindableSignal<Int>()
         assertThat(signal.isBound()).isFalse()
 
         signal.bindTo(signalOf(10))
@@ -145,14 +145,14 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     @Test
     fun `currentSignal returns bound signal`() {
         val source = signalOf(10)
-        val signal = CowBindableSignal(source)
+        val signal = DefaultBindableSignal(source)
 
         assertThat(signal.currentSignal()).isSameAs(source)
     }
 
     @Test
     fun `currentSignal returns null when not bound`() {
-        val signal = CowBindableSignal<Int>()
+        val signal = DefaultBindableSignal<Int>()
         assertThat(signal.currentSignal()).isNull()
     }
 
@@ -266,7 +266,7 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
     @Test
     fun `bindable signal reflects source value without write capability`() {
         val source = mutableSignalOf(10)
-        val signal = CowBindableSignal(source)
+        val signal = DefaultBindableSignal(source)
 
         assertThat(signal.value).isEqualTo(10)
 
@@ -276,14 +276,14 @@ class CowBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
 
     @Test
     fun `toString shows value and state`() {
-        val signal = CowBindableSignal(signalOf(42))
+        val signal = DefaultBindableSignal(signalOf(42))
         assertThat(signal.toString()).contains("42")
-        assertThat(signal.toString()).contains("CowBindableSignal")
+        assertThat(signal.toString()).contains("DefaultBindableSignal")
     }
 
     @Test
     fun `toString shows not bound when unbound`() {
-        val signal = CowBindableSignal<Int>()
+        val signal = DefaultBindableSignal<Int>()
         assertThat(signal.toString()).contains("<not bound>")
     }
 }

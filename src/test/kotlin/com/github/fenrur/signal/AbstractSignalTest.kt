@@ -42,8 +42,8 @@ abstract class AbstractSignalTest<S : Signal<Int>> {
         val signal = createSignal(42)
         val received = AtomicReference<Int?>(null)
 
-        signal.subscribe { either ->
-            either.onRight { received.set(it) }
+        signal.subscribe { result ->
+            result.onSuccess { received.set(it) }
         }
 
         assertThat(received.get()).isEqualTo(42)
@@ -64,9 +64,9 @@ abstract class AbstractSignalTest<S : Signal<Int>> {
         val received2 = AtomicReference<Int?>(null)
         val received3 = AtomicReference<Int?>(null)
 
-        signal.subscribe { it.onRight { v -> received1.set(v) } }
-        signal.subscribe { it.onRight { v -> received2.set(v) } }
-        signal.subscribe { it.onRight { v -> received3.set(v) } }
+        signal.subscribe { it.onSuccess { v -> received1.set(v) } }
+        signal.subscribe { it.onSuccess { v -> received2.set(v) } }
+        signal.subscribe { it.onSuccess { v -> received3.set(v) } }
 
         assertThat(received1.get()).isEqualTo(42)
         assertThat(received2.get()).isEqualTo(42)
@@ -96,7 +96,7 @@ abstract class AbstractSignalTest<S : Signal<Int>> {
         signal.close()
 
         val received = AtomicReference<Int?>(null)
-        val unsubscribe = signal.subscribe { it.onRight { v -> received.set(v) } }
+        val unsubscribe = signal.subscribe { it.onSuccess { v -> received.set(v) } }
 
         assertThat(received.get()).isNull()
         // Should not throw
@@ -223,8 +223,8 @@ abstract class AbstractSignalTest<S : Signal<Int>> {
         val received1 = AtomicReference<Int?>(null)
         val received2 = AtomicReference<Int?>(null)
 
-        signal.subscribe { it.onRight { v -> received1.set(v) } }
-        signal.subscribe { it.onRight { v -> received2.set(v) } }
+        signal.subscribe { it.onSuccess { v -> received1.set(v) } }
+        signal.subscribe { it.onSuccess { v -> received2.set(v) } }
 
         assertThat(received1.get()).isEqualTo(42)
         assertThat(received2.get()).isEqualTo(42)

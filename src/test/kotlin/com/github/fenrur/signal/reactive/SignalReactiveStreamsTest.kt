@@ -134,8 +134,8 @@ class SignalReactiveStreamsTest {
         val signal = publisher.asSignal(initial = 0)
 
         val values = mutableListOf<Int>()
-        signal.subscribe { either ->
-            either.fold({}, { values.add(it) })
+        signal.subscribe {
+            it.onSuccess { v -> values.add(v) }
         }
 
         Thread.sleep(200)

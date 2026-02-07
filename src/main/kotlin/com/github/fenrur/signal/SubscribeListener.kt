@@ -1,9 +1,7 @@
 package com.github.fenrur.signal
 
-import com.github.fenrur.signal.Either
-
 /**
  * Listener type for signal subscriptions.
- * Receives either an error ([Either.Left]) or a value ([Either.Right]).
+ * Receives either a success ([Result.success]) or a failure ([Result.failure]).
  */
-typealias SubscribeListener<T> = (Either<Throwable, T>) -> Unit
+typealias SubscribeListener<T> = (Result<T>) -> Unit
