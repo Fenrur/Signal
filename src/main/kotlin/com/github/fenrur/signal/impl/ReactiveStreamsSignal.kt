@@ -8,6 +8,7 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -24,6 +25,9 @@ private sealed class ReactiveOptionalValue<out T> {
  * This signal subscribes to the publisher and updates its value
  * whenever a new item is emitted.
  *
+ * Implements [SourceSignalNode] for glitch-free integration with the dependency graph.
+ * Uses lazy subscription - only subscribes to publisher when there are listeners or targets.
+ *
  * Thread-safety: All operations are thread-safe.
  *
  * @param T the type of value held by the signal
@@ -33,11 +37,11 @@ private sealed class ReactiveOptionalValue<out T> {
  * @param request number of items to request from the publisher (default: Long.MAX_VALUE)
  */
 class ReactiveStreamsSignal<T>(
-    publisher: Publisher<T>,
+    private val publisher: Publisher<T>,
     initial: T? = null,
     private val hasInitial: Boolean = initial != null,
-    request: Long = Long.MAX_VALUE
-) : Signal<T> {
+    private val request: Long = Long.MAX_VALUE
+) : Signal<T>, SourceSignalNode {
 
     private val ref = AtomicReference<ReactiveOptionalValue<T>>(
         @Suppress("UNCHECKED_CAST")
@@ -46,31 +50,74 @@ class ReactiveStreamsSignal<T>(
     private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
 
-    @Volatile
-    private var subscription: Subscription? = null
+    // Lazy subscription
+    private val subscribed = AtomicBoolean(false)
+    private val subscription = AtomicReference<Subscription?>(null)
 
-    init {
-        publisher.subscribe(object : Subscriber<T> {
-            override fun onSubscribe(s: Subscription) {
-                subscription = s
-                s.request(request)
-            }
+    // Glitch-free infrastructure
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
+    private val _version = AtomicLong(0L)
+    override val version: Long get() = _version.get()
 
-            override fun onNext(item: T) {
-                if (closed.get()) return
-                val new = ReactiveOptionalValue.Present(item)
-                val old = ref.getAndSet(new)
-                if (old != new) notifyAllValue(listeners.toList(), item)
+    private val listenerEffect = object : EffectNode {
+        private val pending = AtomicBoolean(false)
+        override fun markPending(): Boolean = pending.compareAndSet(false, true)
+        override fun execute() {
+            pending.set(false)
+            if (!closed.get() && listeners.isNotEmpty()) {
+                when (val v = ref.get()) {
+                    is ReactiveOptionalValue.Present -> notifyAllValue(listeners.toList(), v.value)
+                    is ReactiveOptionalValue.Absent -> { /* No value yet */ }
+                }
             }
+        }
+    }
 
-            override fun onError(t: Throwable) {
-                notifyAllError(listeners.toList(), t)
-            }
+    private fun ensureSubscribed() {
+        if (subscribed.compareAndSet(false, true)) {
+            publisher.subscribe(object : Subscriber<T> {
+                override fun onSubscribe(s: Subscription) {
+                    subscription.set(s)
+                    s.request(request)
+                }
 
-            override fun onComplete() {
-                // no-op
-            }
-        })
+                override fun onNext(item: T) {
+                    if (closed.get()) return
+                    val new = ReactiveOptionalValue.Present(item)
+                    val old = ref.getAndSet(new)
+                    if (old != new) {
+                        _version.incrementAndGet()
+                        SignalGraph.incrementGlobalVersion()
+
+                        SignalGraph.startBatch()
+                        try {
+                            for (target in targets) {
+                                target.markDirty()
+                            }
+                            if (listeners.isNotEmpty()) {
+                                SignalGraph.scheduleEffect(listenerEffect)
+                            }
+                        } finally {
+                            SignalGraph.endBatch()
+                        }
+                    }
+                }
+
+                override fun onError(t: Throwable) {
+                    notifyAllError(listeners.toList(), t)
+                }
+
+                override fun onComplete() {
+                    // no-op
+                }
+            })
+        }
+    }
+
+    private fun maybeUnsubscribe() {
+        if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
+            subscription.getAndSet(null)?.cancel()
+        }
     }
 
     override val value: T
@@ -81,20 +128,36 @@ class ReactiveStreamsSignal<T>(
 
     override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.get()) return {}
+        ensureSubscribed()
         when (val current = ref.get()) {
             is ReactiveOptionalValue.Present -> listener(Result.success(current.value))
             is ReactiveOptionalValue.Absent -> { /* No initial emission until a value is received */ }
         }
         listeners += listener
-        return { listeners -= listener }
+        return {
+            listeners -= listener
+            maybeUnsubscribe()
+        }
     }
 
     override val isClosed: Boolean get() = closed.get()
 
+    override fun addTarget(target: DirtyMarkable) {
+        targets += target
+        ensureSubscribed()
+    }
+
+    override fun removeTarget(target: DirtyMarkable) {
+        targets -= target
+        maybeUnsubscribe()
+    }
+
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            subscription?.cancel()
+            subscription.getAndSet(null)?.cancel()
             listeners.clear()
+            targets.clear()
+            subscribed.set(false)
         }
     }
 
@@ -103,7 +166,7 @@ class ReactiveStreamsSignal<T>(
             is ReactiveOptionalValue.Present -> v.value.toString()
             is ReactiveOptionalValue.Absent -> "<no value>"
         }
-        return "ReactiveStreamsSignal(value=$valueStr, isClosed=$isClosed)"
+        return "ReactiveStreamsSignal(value=$valueStr, version=$version, isClosed=$isClosed)"
     }
 
     companion object {

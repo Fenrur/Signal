@@ -1,18 +1,21 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.Signal
-import com.github.fenrur.signal.SubscribeListener
-import com.github.fenrur.signal.UnSubscriber
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [Signal] that combines the source with the latest value from another signal.
+ * A [Signal] that combines the source with the latest value from another signal,
+ * with glitch-free semantics.
  *
  * Emits whenever the source signal changes, combining with the latest
  * value from the other signal. Does NOT emit when only the other signal changes.
- * Uses lazy subscription to prevent memory leaks.
+ *
+ * **Design Note**: This signal intentionally bypasses the MAYBE_DIRTY optimization
+ * by always returning `true` from [hasSourcesChanged]. This ensures that when
+ * the source emits, we always sample the current value from [other], even if
+ * [other] changed independently. Without this, we could miss updates to [other]
+ * that occurred between source emissions.
  *
  * @param A the type of source values
  * @param B the type of other signal values
@@ -25,56 +28,36 @@ class WithLatestFromSignal<A, B, R>(
     private val source: Signal<A>,
     private val other: Signal<B>,
     private val combiner: (A, B) -> R
-) : Signal<R> {
+) : AbstractComputedSignal<R>() {
 
-    private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
-    private val closed = AtomicBoolean(false)
-    private val subscribed = AtomicBoolean(false)
-    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
+    // Only source triggers notifications, but we sample from other
+    override val sources: List<Signal<*>> = listOf(source)
 
-    private fun ensureSubscribed() {
-        if (subscribed.compareAndSet(false, true)) {
-            // Only subscribe to source - we sample other on each source emission
-            unsubscribeSource.set(source.subscribe { result ->
-                if (closed.get()) return@subscribe
-                result.fold(
-                    onSuccess = { sourceValue ->
-                        val combined = combiner(sourceValue, other.value)
-                        notifyAllValue(listeners.toList(), combined)
-                    },
-                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
-                )
-            })
-        }
+    private val lastSourceVersion = AtomicLong(-1L)
+
+    override val cachedValue: AtomicReference<R> = AtomicReference(combiner(source.value, other.value))
+
+    init {
+        lastSourceVersion.set(getVersion(source))
     }
 
-    private fun maybeUnsubscribe() {
-        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
-            unsubscribeSource.getAndSet {}.invoke()
-        }
-    }
+    override fun computeValue(): R = combiner(source.value, other.value)
 
-    override val isClosed: Boolean get() = closed.get()
-    override val value: R get() = combiner(source.value, other.value)
+    /**
+     * Always returns true to ensure we sample the latest value from [other].
+     *
+     * Unlike typical computed signals that can skip recomputation when sources
+     * haven't changed, WithLatestFrom must always recompute because:
+     * 1. We only track [source] in the dependency graph (not [other])
+     * 2. [other] may have changed independently since our last computation
+     * 3. We need the freshest value from [other] at the moment [source] emits
+     *
+     * This is a deliberate trade-off: slightly less efficient but semantically correct.
+     */
+    override fun hasSourcesChanged(): Boolean = true
 
-    override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
-        if (isClosed) return {}
-        ensureSubscribed()
-        listener(Result.success(value))
-        listeners += listener
-        return {
-            listeners -= listener
-            maybeUnsubscribe()
-        }
-    }
-
-    override fun close() {
-        if (closed.compareAndSet(false, true)) {
-            listeners.clear()
-            if (subscribed.compareAndSet(true, false)) {
-                unsubscribeSource.getAndSet {}.invoke()
-            }
-        }
+    override fun updateSourceVersions() {
+        lastSourceVersion.set(getVersion(source))
     }
 
     override fun toString(): String = "WithLatestFromSignal(value=$value, isClosed=$isClosed)"

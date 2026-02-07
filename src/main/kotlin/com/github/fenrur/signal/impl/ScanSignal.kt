@@ -1,85 +1,56 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.Signal
-import com.github.fenrur.signal.SubscribeListener
-import com.github.fenrur.signal.UnSubscriber
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [Signal] that accumulates values using an accumulator function.
+ * A [Signal] that accumulates values over time, with glitch-free semantics.
  *
- * Similar to Kotlin's `scan` or `runningFold`, this signal maintains
- * an accumulated state that updates whenever the source emits.
- * Uses lazy subscription to prevent memory leaks.
+ * Similar to Kotlin's `scan` or `runningFold`. Each emission includes
+ * the accumulated result of applying the accumulator to all previous values.
  *
  * @param T the type of source values
- * @param R the type of accumulated value
+ * @param R the type of accumulated values
  * @param source the source signal
  * @param initial the initial accumulator value
- * @param accumulator function to combine accumulator with new value
+ * @param accumulator function combining accumulator with each new value
  */
 class ScanSignal<T, R>(
     private val source: Signal<T>,
-    private val initial: R,
+    initial: R,
     private val accumulator: (acc: R, value: T) -> R
-) : Signal<R> {
+) : AbstractComputedSignal<R>() {
 
-    private val ref = AtomicReference(accumulator(initial, source.value))
-    private val lastSourceValue = AtomicReference(source.value)
-    private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
-    private val closed = AtomicBoolean(false)
-    private val subscribed = AtomicBoolean(false)
-    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
+    override val sources: List<Signal<*>> = listOf(source)
 
-    private fun ensureSubscribed() {
-        if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { result ->
-                if (closed.get()) return@subscribe
-                result.fold(
-                    onSuccess = { newValue ->
-                        // Skip if this is the same value we already processed
-                        val lastSeen = lastSourceValue.getAndSet(newValue)
-                        if (lastSeen != newValue) {
-                            val newAcc = accumulator(ref.get(), newValue)
-                            ref.set(newAcc)
-                            notifyAllValue(listeners.toList(), newAcc)
-                        }
-                    },
-                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
-                )
-            })
+    private val lastSourceVersion = AtomicLong(-1L)
+    private val lastSourceValue: AtomicReference<T>
+
+    override val cachedValue: AtomicReference<R>
+
+    init {
+        val initialSourceValue = source.value
+        cachedValue = AtomicReference(accumulator(initial, initialSourceValue))
+        lastSourceValue = AtomicReference(initialSourceValue)
+        lastSourceVersion.set(getVersion(source))
+    }
+
+    override fun computeValue(): R {
+        val current = source.value
+        val lastValue = lastSourceValue.get()
+        return if (current != lastValue) {
+            lastSourceValue.set(current)
+            accumulator(cachedValue.get(), current)
+        } else {
+            cachedValue.get()
         }
     }
 
-    private fun maybeUnsubscribe() {
-        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
-            unsubscribeSource.getAndSet {}.invoke()
-        }
-    }
+    override fun hasSourcesChanged(): Boolean = getVersion(source) != lastSourceVersion.get()
 
-    override val isClosed: Boolean get() = closed.get()
-    override val value: R get() = ref.get()
-
-    override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
-        if (isClosed) return {}
-        ensureSubscribed()
-        listener(Result.success(value))
-        listeners += listener
-        return {
-            listeners -= listener
-            maybeUnsubscribe()
-        }
-    }
-
-    override fun close() {
-        if (closed.compareAndSet(false, true)) {
-            listeners.clear()
-            if (subscribed.compareAndSet(true, false)) {
-                unsubscribeSource.getAndSet {}.invoke()
-            }
-        }
+    override fun updateSourceVersions() {
+        lastSourceVersion.set(getVersion(source))
     }
 
     override fun toString(): String = "ScanSignal(value=$value, isClosed=$isClosed)"

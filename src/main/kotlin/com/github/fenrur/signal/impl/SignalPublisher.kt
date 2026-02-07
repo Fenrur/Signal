@@ -7,6 +7,7 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * A Reactive Streams [Publisher] that wraps a [Signal].
@@ -24,7 +25,7 @@ class SignalPublisher<T>(private val signal: Signal<T>) : Publisher<T> {
     override fun subscribe(subscriber: Subscriber<in T>) {
         val requested = AtomicLong(0)
         val cancelled = AtomicBoolean(false)
-        var unsubscribe: UnSubscriber? = null
+        val unsubscribeRef = AtomicReference<UnSubscriber> {}
 
         subscriber.onSubscribe(object : Subscription {
             override fun request(n: Long) {
@@ -37,12 +38,12 @@ class SignalPublisher<T>(private val signal: Signal<T>) : Publisher<T> {
 
             override fun cancel() {
                 if (cancelled.compareAndSet(false, true)) {
-                    unsubscribe?.invoke()
+                    unsubscribeRef.get().invoke()
                 }
             }
         })
 
-        unsubscribe = signal.subscribe { result ->
+        val unsubscribe = signal.subscribe { result ->
             if (cancelled.get()) return@subscribe
             result.fold(
                 onSuccess = { value ->
@@ -57,6 +58,7 @@ class SignalPublisher<T>(private val signal: Signal<T>) : Publisher<T> {
                 }
             )
         }
+        unsubscribeRef.set(unsubscribe)
 
         if (signal.isClosed) {
             subscriber.onComplete()

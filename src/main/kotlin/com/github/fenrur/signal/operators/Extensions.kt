@@ -261,7 +261,7 @@ fun <A, B> Signal<A>.withLatestFrom(other: Signal<B>): Signal<Pair<A, B>> =
  * Combines multiple signals into a list signal.
  */
 fun <T> combineAll(vararg signals: Signal<T>): Signal<List<T>> {
-    if (signals.isEmpty()) return MappedSignal(DefaultMutableSignal(Unit)) { emptyList() }
+    if (signals.isEmpty()) return ConstantSignal(emptyList())
     return signals.drop(1).fold(signals[0].map { listOf(it) }) { acc, signal ->
         combine(acc, signal) { list, value -> list + value }
     }

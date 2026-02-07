@@ -1,5 +1,6 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.operators.pairwise
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -9,7 +10,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal returns initial pair of same value`() {
         val source = DefaultMutableSignal(10)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         assertThat(pairwise.value).isEqualTo(10 to 10)
     }
@@ -17,7 +18,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal emits pairs of consecutive values`() {
         val source = DefaultMutableSignal(1)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         // Subscribe to enable reactive tracking
         pairwise.subscribe { }
@@ -35,7 +36,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal notifies subscribers with pairs`() {
         val source = DefaultMutableSignal(1)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         val pairs = CopyOnWriteArrayList<Pair<Int, Int>>()
 
         pairwise.subscribe { it.onSuccess { v -> pairs.add(v) } }
@@ -49,7 +50,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal does not emit for same value`() {
         val source = DefaultMutableSignal(10)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         val pairs = CopyOnWriteArrayList<Pair<Int, Int>>()
 
         pairwise.subscribe { it.onSuccess { v -> pairs.add(v) } }
@@ -63,7 +64,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal closes properly`() {
         val source = DefaultMutableSignal(10)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         assertThat(pairwise.isClosed).isFalse()
 
@@ -75,7 +76,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise signal stops receiving after close`() {
         val source = DefaultMutableSignal(1)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         val pairs = CopyOnWriteArrayList<Pair<Int, Int>>()
 
         pairwise.subscribe { it.onSuccess { v -> pairs.add(v) } }
@@ -90,7 +91,7 @@ class PairwiseSignalTest {
     @Test
     fun `unsubscribe stops receiving notifications`() {
         val source = DefaultMutableSignal(1)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         val pairs = CopyOnWriteArrayList<Pair<Int, Int>>()
 
         val unsubscribe = pairwise.subscribe { it.onSuccess { v -> pairs.add(v) } }
@@ -106,7 +107,7 @@ class PairwiseSignalTest {
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
         val source = DefaultMutableSignal(10)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         pairwise.close()
 
         val pairs = CopyOnWriteArrayList<Pair<Int, Int>>()
@@ -119,7 +120,7 @@ class PairwiseSignalTest {
     @Test
     fun `pairwise with string values`() {
         val source = DefaultMutableSignal("a")
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         pairwise.subscribe { }
 
@@ -135,7 +136,7 @@ class PairwiseSignalTest {
         data class Point(val x: Int, val y: Int)
 
         val source = DefaultMutableSignal(Point(0, 0))
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         pairwise.subscribe { }
 
@@ -149,7 +150,7 @@ class PairwiseSignalTest {
     @Test
     fun `multiple subscribers receive same notifications`() {
         val source = DefaultMutableSignal(1)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
         val pairs1 = CopyOnWriteArrayList<Pair<Int, Int>>()
         val pairs2 = CopyOnWriteArrayList<Pair<Int, Int>>()
 
@@ -167,7 +168,7 @@ class PairwiseSignalTest {
     @Test
     fun `toString shows value and state`() {
         val source = DefaultMutableSignal(10)
-        val pairwise = PairwiseSignal(source)
+        val pairwise = source.pairwise()
 
         assertThat(pairwise.toString()).contains("10")
         assertThat(pairwise.toString()).contains("PairwiseSignal")

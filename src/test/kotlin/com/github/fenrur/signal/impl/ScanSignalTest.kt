@@ -1,5 +1,6 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.operators.scan
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -9,7 +10,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal applies accumulator to initial value`() {
         val source = DefaultMutableSignal(10)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
 
         // Initial: accumulator(0, 10) = 10
         assertThat(scan.value).isEqualTo(10)
@@ -18,7 +19,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal accumulates values`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
 
         // Subscribe to enable reactive updates
         scan.subscribe { }
@@ -38,7 +39,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal notifies subscribers with accumulated values`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         val values = CopyOnWriteArrayList<Int>()
 
         scan.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -52,7 +53,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal does not emit for same value`() {
         val source = DefaultMutableSignal(10)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         val values = CopyOnWriteArrayList<Int>()
 
         scan.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -66,7 +67,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal can change type`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, "") { acc, value -> "$acc$value" }
+        val scan = source.scan("") { acc, value -> "$acc$value" }
 
         assertThat(scan.value).isEqualTo("1")
 
@@ -82,7 +83,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal with multiplication`() {
         val source = DefaultMutableSignal(2)
-        val scan = ScanSignal(source, 1) { acc, value -> acc * value }
+        val scan = source.scan(1) { acc, value -> acc * value }
 
         scan.subscribe { }
 
@@ -98,7 +99,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal with list accumulation`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, emptyList<Int>()) { acc, value -> acc + value }
+        val scan = source.scan(emptyList<Int>()) { acc, value -> acc + value }
 
         scan.subscribe { }
 
@@ -114,7 +115,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal closes properly`() {
         val source = DefaultMutableSignal(10)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
 
         assertThat(scan.isClosed).isFalse()
 
@@ -126,7 +127,7 @@ class ScanSignalTest {
     @Test
     fun `scan signal stops receiving after close`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         val values = CopyOnWriteArrayList<Int>()
 
         scan.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -141,7 +142,7 @@ class ScanSignalTest {
     @Test
     fun `unsubscribe stops receiving notifications`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         val values = CopyOnWriteArrayList<Int>()
 
         val unsubscribe = scan.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -157,7 +158,7 @@ class ScanSignalTest {
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
         val source = DefaultMutableSignal(10)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         scan.close()
 
         val values = CopyOnWriteArrayList<Int>()
@@ -170,7 +171,7 @@ class ScanSignalTest {
     @Test
     fun `multiple subscribers receive same notifications`() {
         val source = DefaultMutableSignal(1)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
         val values1 = CopyOnWriteArrayList<Int>()
         val values2 = CopyOnWriteArrayList<Int>()
 
@@ -188,7 +189,7 @@ class ScanSignalTest {
     @Test
     fun `scan with max accumulator`() {
         val source = DefaultMutableSignal(5)
-        val scan = ScanSignal(source, Int.MIN_VALUE) { acc, value -> maxOf(acc, value) }
+        val scan = source.scan(Int.MIN_VALUE) { acc, value -> maxOf(acc, value) }
 
         scan.subscribe { }
 
@@ -207,7 +208,7 @@ class ScanSignalTest {
     @Test
     fun `toString shows value and state`() {
         val source = DefaultMutableSignal(10)
-        val scan = ScanSignal(source, 0) { acc, value -> acc + value }
+        val scan = source.scan(0) { acc, value -> acc + value }
 
         assertThat(scan.toString()).contains("10")
         assertThat(scan.toString()).contains("ScanSignal")

@@ -286,4 +286,133 @@ class DefaultBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
         val signal = DefaultBindableSignal<Int>()
         assertThat(signal.toString()).contains("<not bound>")
     }
+
+    // ==================== Multiple successive rebindings ====================
+
+    @Test
+    fun `multiple successive rebindings work correctly`() {
+        val signals = (1..5).map { mutableSignalOf(it * 10) }
+        val bindable = DefaultBindableSignal(signals[0])
+        val values = CopyOnWriteArrayList<Int>()
+
+        bindable.subscribe { it.onSuccess { v -> values.add(v) } }
+
+        // Rebind through all signals
+        for (i in 1 until signals.size) {
+            values.clear()
+            bindable.bindTo(signals[i])
+            assertThat(bindable.value).isEqualTo((i + 1) * 10)
+            assertThat(values).contains((i + 1) * 10)
+        }
+
+        // Only last signal affects bindable
+        values.clear()
+        signals[0].value = 999
+        signals[1].value = 888
+        signals[2].value = 777
+        signals[3].value = 666
+        signals[4].value = 555
+
+        assertThat(values).containsExactly(555)
+        assertThat(bindable.value).isEqualTo(555)
+    }
+
+    @Test
+    fun `rebinding to same signal is idempotent`() {
+        val source = mutableSignalOf(10)
+        val bindable = DefaultBindableSignal(source)
+        val values = CopyOnWriteArrayList<Int>()
+
+        bindable.subscribe { it.onSuccess { v -> values.add(v) } }
+        values.clear()
+
+        // Rebind to same signal multiple times
+        bindable.bindTo(source)
+        bindable.bindTo(source)
+        bindable.bindTo(source)
+
+        source.value = 20
+        assertThat(bindable.value).isEqualTo(20)
+        // Each rebind notifies, so we get multiple notifications for 10
+        assertThat(values).contains(20)
+    }
+
+    @Test
+    fun `rapid rebinding does not lose updates`() {
+        val signals = (1..10).map { mutableSignalOf(it) }
+        val bindable = DefaultBindableSignal(signals[0])
+        val values = CopyOnWriteArrayList<Int>()
+
+        bindable.subscribe { it.onSuccess { v -> values.add(v) } }
+
+        // Rapidly rebind
+        signals.forEach { bindable.bindTo(it) }
+
+        // Final value should be from last signal
+        assertThat(bindable.value).isEqualTo(10)
+
+        // Update last signal
+        values.clear()
+        signals.last().value = 100
+        assertThat(values).containsExactly(100)
+    }
+
+    @Test
+    fun `rebinding clears dirty flag correctly`() {
+        val source1 = mutableSignalOf(10)
+        val source2 = mutableSignalOf(20)
+        val bindable = DefaultBindableSignal(source1)
+
+        // Read to make it clean
+        assertThat(bindable.value).isEqualTo(10)
+
+        // Update source1 (makes bindable dirty)
+        source1.value = 15
+
+        // Rebind before reading dirty value
+        bindable.bindTo(source2)
+
+        // Should return source2's value, not stale source1 value
+        assertThat(bindable.value).isEqualTo(20)
+    }
+
+    @Test
+    fun `concurrent rebinding is thread-safe`() {
+        val signals = (1..10).map { mutableSignalOf(it * 10) }
+        val bindable = DefaultBindableSignal(signals[0])
+        val latch = java.util.concurrent.CountDownLatch(1)
+        val threads = mutableListOf<Thread>()
+
+        bindable.subscribe { }
+
+        // Multiple threads rebinding
+        repeat(5) { threadId ->
+            threads += Thread {
+                latch.await()
+                repeat(20) { i ->
+                    val idx = (threadId * 20 + i) % signals.size
+                    bindable.bindTo(signals[idx])
+                    Thread.yield()
+                }
+            }
+        }
+
+        // Thread updating signals
+        threads += Thread {
+            latch.await()
+            repeat(100) { i ->
+                signals.forEach { it.value = i * 100 }
+                Thread.yield()
+            }
+        }
+
+        threads.forEach { it.start() }
+        latch.countDown()
+        threads.forEach { it.join(5000) }
+
+        // Bindable is still functional
+        val finalSignal = mutableSignalOf(999)
+        bindable.bindTo(finalSignal)
+        assertThat(bindable.value).isEqualTo(999)
+    }
 }

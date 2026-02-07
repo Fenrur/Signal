@@ -1,9 +1,9 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.operators.distinctUntilChangedBy
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicInteger
 
 class DistinctBySignalTest {
 
@@ -12,7 +12,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal returns initial value`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
 
         assertThat(distinct.value).isEqualTo(Person(1, "John"))
     }
@@ -20,7 +20,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal does not emit when key is same`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -35,7 +35,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal emits when key changes`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -50,7 +50,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal with multiple changes`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -67,7 +67,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal closes properly`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
 
         assertThat(distinct.isClosed).isFalse()
 
@@ -79,7 +79,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal stops receiving after close`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -94,7 +94,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal with primitive key selector`() {
         val source = DefaultMutableSignal(10)
-        val distinct = DistinctBySignal(source) { it / 10 } // Key is 1 for 10-19, 2 for 20-29, etc.
+        val distinct = source.distinctUntilChangedBy { it / 10 } // Key is 1 for 10-19, 2 for 20-29, etc.
         val values = CopyOnWriteArrayList<Int>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -111,7 +111,7 @@ class DistinctBySignalTest {
     @Test
     fun `distinctBy signal with string key selector`() {
         val source = DefaultMutableSignal("hello")
-        val distinct = DistinctBySignal(source) { it.length }
+        val distinct = source.distinctUntilChangedBy { it.length }
         val values = CopyOnWriteArrayList<String>()
 
         distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -128,7 +128,7 @@ class DistinctBySignalTest {
     @Test
     fun `unsubscribe stops receiving notifications`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values = CopyOnWriteArrayList<Person>()
 
         val unsubscribe = distinct.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -144,7 +144,7 @@ class DistinctBySignalTest {
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         distinct.close()
 
         val values = CopyOnWriteArrayList<Person>()
@@ -157,7 +157,7 @@ class DistinctBySignalTest {
     @Test
     fun `multiple subscribers receive same notifications`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
         val values1 = CopyOnWriteArrayList<Person>()
         val values2 = CopyOnWriteArrayList<Person>()
 
@@ -175,7 +175,7 @@ class DistinctBySignalTest {
     @Test
     fun `toString shows value and state`() {
         val source = DefaultMutableSignal(Person(1, "John"))
-        val distinct = DistinctBySignal(source) { it.id }
+        val distinct = source.distinctUntilChangedBy { it.id }
 
         assertThat(distinct.toString()).contains("Person")
         assertThat(distinct.toString()).contains("DistinctBySignal")

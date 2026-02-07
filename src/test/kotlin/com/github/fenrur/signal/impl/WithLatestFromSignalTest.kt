@@ -1,5 +1,6 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.operators.withLatestFrom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -10,7 +11,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal returns combined initial value`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertThat(combined.value).isEqualTo(110)
     }
@@ -19,7 +20,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal emits when source changes`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -34,7 +35,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal does not emit when only other changes`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -49,7 +50,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal samples latest from other on source change`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -65,7 +66,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal value reflects current state`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertThat(combined.value).isEqualTo(110)
 
@@ -80,7 +81,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal with pair combiner`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal("hello")
-        val combined = WithLatestFromSignal(source, other) { a, b -> a to b }
+        val combined = source.withLatestFrom(other) { a, b -> a to b }
 
         assertThat(combined.value).isEqualTo(10 to "hello")
 
@@ -96,7 +97,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal multiple source changes`() {
         val source = DefaultMutableSignal(1)
         val other = DefaultMutableSignal(10)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a * b }
+        val combined = source.withLatestFrom(other) { a, b -> a * b }
         val values = CopyOnWriteArrayList<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -112,7 +113,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal closes properly`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertThat(combined.isClosed).isFalse()
 
@@ -125,7 +126,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom signal stops receiving after close`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -141,7 +142,7 @@ class WithLatestFromSignalTest {
     fun `unsubscribe stops receiving notifications`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = CopyOnWriteArrayList<Int>()
 
         val unsubscribe = combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -158,7 +159,7 @@ class WithLatestFromSignalTest {
     fun `subscribe on closed signal returns no-op unsubscriber`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         combined.close()
 
         val values = CopyOnWriteArrayList<Int>()
@@ -172,7 +173,7 @@ class WithLatestFromSignalTest {
     fun `multiple subscribers receive same notifications`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values1 = CopyOnWriteArrayList<Int>()
         val values2 = CopyOnWriteArrayList<Int>()
 
@@ -191,7 +192,7 @@ class WithLatestFromSignalTest {
     fun `withLatestFrom with different types`() {
         val source = DefaultMutableSignal(5)
         val other = DefaultMutableSignal(listOf("a", "b", "c"))
-        val combined = WithLatestFromSignal(source, other) { index, list ->
+        val combined = source.withLatestFrom(other) { index, list ->
             list.getOrNull(index) ?: "N/A"
         }
 
@@ -211,7 +212,7 @@ class WithLatestFromSignalTest {
     fun `toString shows value and state`() {
         val source = DefaultMutableSignal(10)
         val other = DefaultMutableSignal(100)
-        val combined = WithLatestFromSignal(source, other) { a, b -> a + b }
+        val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertThat(combined.toString()).contains("110")
         assertThat(combined.toString()).contains("WithLatestFromSignal")

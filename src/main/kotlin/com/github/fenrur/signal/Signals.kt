@@ -197,3 +197,35 @@ fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): StateFlowSignal<T> = State
  * @return a MutableSignal backed by the MutableStateFlow
  */
 fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): MutableStateFlowSignal<T> = MutableStateFlowSignal(this, scope)
+
+// =============================================================================
+// BATCHING
+// =============================================================================
+
+/**
+ * Executes a block within a batch context.
+ *
+ * Multiple signal mutations within the batch are grouped together.
+ * Effects (subscriber notifications) are only executed once at the end of the outermost batch,
+ * seeing the final consistent state. This prevents glitches and reduces unnecessary intermediate
+ * notifications.
+ *
+ * Example:
+ * ```kotlin
+ * val a = mutableSignalOf(1)
+ * val b = mutableSignalOf(10)
+ * val c = combine(a, b) { x, y -> x + y }
+ * val emissions = mutableListOf<Int>()
+ * c.subscribe { result -> result.onSuccess { emissions.add(it) } }
+ *
+ * batch {
+ *     a.value = 2
+ *     b.value = 20
+ * }
+ * // emissions contains only [11, 22], not [11, 12, 22]
+ * ```
+ *
+ * @param block the code to execute within the batch
+ * @return the result of the block
+ */
+fun <T> batch(block: () -> T): T = SignalGraph.batch(block)

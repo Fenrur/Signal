@@ -1,0 +1,249 @@
+package com.github.fenrur.signal.impl
+
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+
+/**
+ * Core infrastructure for glitch-free signal propagation.
+ *
+ * This implements a push-pull model inspired by Preact Signals:
+ * - PUSH phase: When a source signal changes, mark all dependents as dirty/maybe-dirty
+ * - PULL phase: When reading a value, validate dependencies recursively before computing
+ *
+ * This ensures that derived signals never see inconsistent intermediate states.
+ */
+object SignalGraph {
+
+    /**
+     * Global version counter. Incremented whenever any MutableSignal changes.
+     * Used for quick staleness detection without traversing the dependency graph.
+     */
+    @JvmStatic
+    val globalVersion = AtomicLong(0L)
+
+    /**
+     * Current batch depth. When > 0, effects are queued instead of executed immediately.
+     */
+    @JvmStatic
+    private val batchDepth = AtomicInteger(0)
+
+    /**
+     * Queue of effects pending execution at the end of the current batch.
+     */
+    @JvmStatic
+    private val pendingEffects = ConcurrentLinkedQueue<EffectNode>()
+
+    /**
+     * Whether we're currently flushing effects. Prevents recursive flush.
+     */
+    @JvmStatic
+    @Volatile
+    private var isFlushing = false
+
+    /**
+     * Executes a block within a batch context.
+     *
+     * Multiple signal mutations within the batch are grouped together.
+     * Effects are only executed once at the end of the outermost batch,
+     * seeing the final consistent state.
+     *
+     * Example:
+     * ```kotlin
+     * val a = mutableSignalOf(1)
+     * val b = mutableSignalOf(10)
+     * val c = combine(a, b) { x, y -> x + y }
+     * val emissions = mutableListOf<Int>()
+     * c.subscribe { emissions.add(it) }
+     *
+     * batch {
+     *     a.value = 2
+     *     b.value = 20
+     * }
+     * // emissions contains only [22], not [12, 22]
+     * ```
+     *
+     * @param block the code to execute within the batch
+     * @return the result of the block
+     */
+    @JvmStatic
+    fun <T> batch(block: () -> T): T {
+        startBatch()
+        try {
+            return block()
+        } finally {
+            endBatch()
+        }
+    }
+
+    /**
+     * Starts a new batch level. Can be nested.
+     */
+    @JvmStatic
+    fun startBatch() {
+        batchDepth.incrementAndGet()
+    }
+
+    /**
+     * Ends the current batch level. When reaching 0, flushes all pending effects.
+     */
+    @JvmStatic
+    fun endBatch() {
+        if (batchDepth.decrementAndGet() == 0) {
+            flushEffects()
+        }
+    }
+
+    /**
+     * Returns true if we're currently inside a batch.
+     */
+    @JvmStatic
+    fun isInBatch(): Boolean = batchDepth.get() > 0
+
+    /**
+     * Schedules an effect to run at the end of the current batch.
+     * If not in a batch, the effect runs immediately.
+     */
+    @JvmStatic
+    fun scheduleEffect(effect: EffectNode) {
+        if (isInBatch()) {
+            // Only add if not already pending
+            if (effect.markPending()) {
+                pendingEffects.offer(effect)
+            }
+        } else {
+            // Execute immediately if not in batch
+            effect.execute()
+        }
+    }
+
+    /**
+     * Flushes all pending effects after a batch ends.
+     */
+    @JvmStatic
+    private fun flushEffects() {
+        if (isFlushing) return
+        isFlushing = true
+        try {
+            while (true) {
+                val effect = pendingEffects.poll() ?: break
+                effect.execute()
+            }
+        } finally {
+            isFlushing = false
+        }
+    }
+
+    /**
+     * Increments the global version and returns the new value.
+     */
+    @JvmStatic
+    fun incrementGlobalVersion(): Long = globalVersion.incrementAndGet()
+}
+
+/**
+ * Flags representing the state of a computed signal's cached value.
+ */
+enum class SignalFlag {
+    /**
+     * The cached value is up-to-date. Can be returned immediately.
+     */
+    CLEAN,
+
+    /**
+     * A direct dependency has changed. Must recompute.
+     */
+    DIRTY,
+
+    /**
+     * An indirect dependency may have changed.
+     * Need to validate dependencies before deciding whether to recompute.
+     */
+    MAYBE_DIRTY
+}
+
+/**
+ * Interface for signals that can be marked dirty in the push phase.
+ */
+interface DirtyMarkable {
+    /**
+     * Marks this signal as dirty (direct dependency changed).
+     * Propagates MAYBE_DIRTY to its own targets.
+     */
+    fun markDirty()
+
+    /**
+     * Marks this signal as maybe-dirty (indirect dependency may have changed).
+     * Propagates MAYBE_DIRTY to its own targets.
+     */
+    fun markMaybeDirty()
+}
+
+/**
+ * Interface for effect nodes that can be scheduled for execution.
+ */
+interface EffectNode {
+    /**
+     * Marks this effect as pending execution.
+     * Returns true if it was not already pending (first call wins).
+     */
+    fun markPending(): Boolean
+
+    /**
+     * Executes the effect callback.
+     */
+    fun execute()
+}
+
+/**
+ * Base interface for computed signals that participate in the dependency graph.
+ */
+interface ComputedSignalNode : DirtyMarkable {
+    /**
+     * The current version of this signal's value.
+     * Incremented only when the value actually changes after recomputation.
+     */
+    val version: Long
+
+    /**
+     * Validates this signal and returns the current value.
+     * If MAYBE_DIRTY, recursively validates dependencies.
+     * If DIRTY, recomputes the value.
+     */
+    fun validateAndGet(): Any?
+
+    /**
+     * Adds a target (dependent signal) that will be notified when this signal changes.
+     */
+    fun addTarget(target: DirtyMarkable)
+
+    /**
+     * Removes a target.
+     */
+    fun removeTarget(target: DirtyMarkable)
+}
+
+/**
+ * Interface for source signals (MutableSignal) that can notify targets.
+ */
+interface SourceSignalNode {
+    /**
+     * The current version of this signal.
+     */
+    val version: Long
+
+    /**
+     * Adds a target that will be notified when this signal changes.
+     */
+    fun addTarget(target: DirtyMarkable)
+
+    /**
+     * Removes a target.
+     */
+    fun removeTarget(target: DirtyMarkable)
+}
+
+/**
+ * Top-level batch function for convenient access.
+ */
+fun <T> batch(block: () -> T): T = SignalGraph.batch(block)

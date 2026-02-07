@@ -1,5 +1,6 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.operators.mapNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -10,7 +11,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal returns transformed initial value`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
 
         assertThat(mapped.value).isEqualTo(20)
     }
@@ -20,7 +21,7 @@ class MapNotNullSignalTest {
         val source = DefaultMutableSignal(3)
 
         assertThatThrownBy {
-            MapNotNullSignal(source) { if (it > 5) it * 2 else null }
+            source.mapNotNull { if (it > 5) it * 2 else null }
         }.isInstanceOf(IllegalStateException::class.java)
             .hasMessageContaining("mapNotNull requires initial value to transform to non-null")
     }
@@ -28,7 +29,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal retains last non-null value when transform returns null`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { if (it > 5) it * 2 else null }
+        val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         assertThat(mapped.value).isEqualTo(20)
 
@@ -40,7 +41,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal updates when transform returns non-null`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { if (it > 5) it * 2 else null }
+        val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         source.value = 15
 
@@ -50,7 +51,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal notifies only for non-null values`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { if (it > 5) it * 2 else null }
+        val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
         val values = CopyOnWriteArrayList<Int>()
 
         mapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -66,7 +67,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal with type transformation`() {
         val source = DefaultMutableSignal("42")
-        val mapped = MapNotNullSignal(source) { it.toIntOrNull() }
+        val mapped = source.mapNotNull { it.toIntOrNull() }
 
         assertThat(mapped.value).isEqualTo(42)
 
@@ -80,7 +81,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal closes properly`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
 
         assertThat(mapped.isClosed).isFalse()
 
@@ -92,7 +93,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull signal stops receiving after close`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
         mapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -107,7 +108,7 @@ class MapNotNullSignalTest {
     @Test
     fun `unsubscribe stops receiving notifications`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
         val values = CopyOnWriteArrayList<Int>()
 
         val unsubscribe = mapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -123,7 +124,7 @@ class MapNotNullSignalTest {
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
         mapped.close()
 
         val values = CopyOnWriteArrayList<Int>()
@@ -136,7 +137,7 @@ class MapNotNullSignalTest {
     @Test
     fun `multiple subscribers receive same notifications`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
         val values1 = CopyOnWriteArrayList<Int>()
         val values2 = CopyOnWriteArrayList<Int>()
 
@@ -154,7 +155,7 @@ class MapNotNullSignalTest {
     @Test
     fun `mapNotNull with nullable source type`() {
         val source = DefaultMutableSignal<Int?>(10)
-        val mapped = MapNotNullSignal(source) { it?.let { v -> v * 2 } }
+        val mapped = source.mapNotNull { it?.let { v -> v * 2 } }
 
         assertThat(mapped.value).isEqualTo(20)
 
@@ -168,7 +169,7 @@ class MapNotNullSignalTest {
     @Test
     fun `toString shows value and state`() {
         val source = DefaultMutableSignal(10)
-        val mapped = MapNotNullSignal(source) { it * 2 }
+        val mapped = source.mapNotNull { it * 2 }
 
         assertThat(mapped.toString()).contains("20")
         assertThat(mapped.toString()).contains("MapNotNullSignal")

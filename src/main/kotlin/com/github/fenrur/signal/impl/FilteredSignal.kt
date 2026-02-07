@@ -1,81 +1,42 @@
 package com.github.fenrur.signal.impl
 
 import com.github.fenrur.signal.Signal
-import com.github.fenrur.signal.SubscribeListener
-import com.github.fenrur.signal.UnSubscriber
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [Signal] that filters values based on a predicate.
+ * A [Signal] that filters values based on a predicate, with glitch-free semantics.
  *
  * When the predicate returns false, the signal retains its previous matching value.
- * Uses lazy subscription to prevent memory leaks.
  *
- * Thread-safety: All operations are thread-safe.
- *
- * @param T the type of value held by the signal
+ * @param T the type of values
  * @param source the source signal
  * @param predicate filter condition
  */
 class FilteredSignal<T>(
     private val source: Signal<T>,
     private val predicate: (T) -> Boolean
-) : Signal<T> {
+) : AbstractComputedSignal<T>() {
 
-    private val lastMatchingValue = AtomicReference(source.value)
-    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
-    private val closed = AtomicBoolean(false)
-    private val subscribed = AtomicBoolean(false)
-    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
+    override val sources: List<Signal<*>> = listOf(source)
 
-    private fun ensureSubscribed() {
-        if (subscribed.compareAndSet(false, true)) {
-            unsubscribeSource.set(source.subscribe { result ->
-                if (closed.get()) return@subscribe
-                result.fold(
-                    onSuccess = { sv ->
-                        if (predicate(sv)) {
-                            lastMatchingValue.set(sv)
-                            notifyAllValue(listeners.toList(), sv)
-                        }
-                    },
-                    onFailure = { ex -> notifyAllError(listeners.toList(), ex) }
-                )
-            })
-        }
+    private val lastSourceVersion = AtomicLong(-1L)
+
+    override val cachedValue: AtomicReference<T> = AtomicReference(source.value)
+
+    init {
+        lastSourceVersion.set(getVersion(source))
     }
 
-    private fun maybeUnsubscribe() {
-        if (listeners.isEmpty() && subscribed.compareAndSet(true, false)) {
-            unsubscribeSource.getAndSet {}.invoke()
-        }
+    override fun computeValue(): T {
+        val current = source.value
+        return if (predicate(current)) current else cachedValue.get()
     }
 
-    override val isClosed: Boolean get() = closed.get()
+    override fun hasSourcesChanged(): Boolean = getVersion(source) != lastSourceVersion.get()
 
-    override val value: T
-        get() = if (predicate(source.value)) source.value else lastMatchingValue.get()
-
-    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
-        if (isClosed) return {}
-        ensureSubscribed()
-        listener(Result.success(value))
-        listeners += listener
-        return {
-            listeners -= listener
-            maybeUnsubscribe()
-        }
-    }
-
-    override fun close() {
-        if (closed.compareAndSet(false, true)) {
-            listeners.clear()
-            if (subscribed.compareAndSet(true, false)) {
-                unsubscribeSource.getAndSet {}.invoke()
-            }
-        }
+    override fun updateSourceVersions() {
+        lastSourceVersion.set(getVersion(source))
     }
 
     override fun toString(): String = "FilteredSignal(value=$value, isClosed=$isClosed)"

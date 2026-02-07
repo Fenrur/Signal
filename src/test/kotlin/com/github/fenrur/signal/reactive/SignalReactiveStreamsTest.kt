@@ -112,6 +112,10 @@ class SignalReactiveStreamsTest {
         val publisher = simplePublisher(42)
         val signal = publisher.asSignal(initial = 0)
 
+        // Subscribe to trigger lazy subscription to publisher
+        val values = mutableListOf<Int>()
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
+
         Thread.sleep(50) // Wait for publisher to emit
         assertThat(signal.value).isEqualTo(42)
     }
@@ -123,6 +127,10 @@ class SignalReactiveStreamsTest {
 
         // Initial value is available immediately (before publisher emits)
         assertThat(signal.value).isEqualTo(0)
+
+        // Subscribe to trigger lazy subscription to publisher
+        val values = mutableListOf<Int>()
+        signal.subscribe { it.onSuccess { v -> values.add(v) } }
 
         Thread.sleep(200) // Wait for publisher to emit
         assertThat(signal.value).isEqualTo(100)
