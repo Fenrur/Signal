@@ -13,6 +13,29 @@ import kotlin.reflect.KProperty
  * - Used as Kotlin property delegates
  * - Closed when no longer needed
  *
+ * ## Thread-Safety Guarantees
+ *
+ * All signal implementations in this library are fully thread-safe:
+ *
+ * - **Atomic reads**: Reading [value] is always atomic and returns a consistent value
+ * - **Concurrent subscriptions**: Multiple threads can subscribe/unsubscribe simultaneously
+ * - **Lock-free**: No blocking synchronization is used, avoiding deadlocks
+ * - **Listener isolation**: An exception in one listener does not affect other listeners
+ *
+ * ## Glitch-Free Semantics
+ *
+ * This library implements a push-pull model that guarantees glitch-free behavior:
+ *
+ * - Derived signals (e.g., from `map`, `combine`) never observe inconsistent intermediate states
+ * - In diamond dependency patterns, derived signals receive exactly one notification per source update
+ * - Batch updates (via [batch]) group multiple source changes into a single consistent update
+ *
+ * ## Exception Handling
+ *
+ * - Exceptions thrown by listeners during [subscribe] propagate to the caller
+ * - Exceptions thrown by listeners during subsequent notifications are caught and ignored
+ * - Computed signals catch transformation exceptions and propagate them via `Result.failure()`
+ *
  * @param T the type of value held by the signal
  */
 interface Signal<out T> : AutoCloseable, ReadOnlyProperty<Any?, T> {

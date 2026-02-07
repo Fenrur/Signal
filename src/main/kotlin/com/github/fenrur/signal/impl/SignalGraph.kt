@@ -7,11 +7,60 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Core infrastructure for glitch-free signal propagation.
  *
- * This implements a push-pull model inspired by Preact Signals:
- * - PUSH phase: When a source signal changes, mark all dependents as dirty/maybe-dirty
- * - PULL phase: When reading a value, validate dependencies recursively before computing
+ * ## Architecture Overview
  *
- * This ensures that derived signals never see inconsistent intermediate states.
+ * This implements a push-pull model inspired by Preact Signals that guarantees
+ * glitch-free reactive updates. The key insight is to separate notification
+ * (push) from computation (pull).
+ *
+ * ## Push-Pull Model
+ *
+ * ### PUSH Phase (Invalidation)
+ *
+ * When a source signal changes:
+ * 1. Mark all direct dependents as DIRTY
+ * 2. Propagate MAYBE_DIRTY to indirect dependents
+ * 3. Schedule effects for listener notification
+ * 4. Do NOT compute new values yet
+ *
+ * ### PULL Phase (Validation)
+ *
+ * When reading a derived signal's value:
+ * 1. Check if flag is CLEAN → return cached value
+ * 2. If MAYBE_DIRTY → validate source versions, upgrade to DIRTY if changed
+ * 3. If DIRTY → recompute value, update cache, set CLEAN
+ * 4. Version tracking prevents unnecessary recomputation
+ *
+ * ## Signal Flags
+ *
+ * - **CLEAN**: Cached value is up-to-date, can be returned immediately
+ * - **DIRTY**: A direct dependency has changed, must recompute
+ * - **MAYBE_DIRTY**: An indirect dependency may have changed, must validate
+ *
+ * ## Why This Works
+ *
+ * Consider a diamond pattern: A → B → D and A → C → D
+ *
+ * When A changes:
+ * 1. PUSH: B and C are marked DIRTY, D is marked MAYBE_DIRTY (via B and C)
+ * 2. Effect scheduled for D's listeners
+ * 3. When effect runs, D.value is read (PULL)
+ * 4. D validates: checks if B or C actually changed
+ * 5. D recomputes once with consistent B and C values
+ * 6. D's listeners receive exactly one notification
+ *
+ * ## Batching
+ *
+ * Multiple signal updates can be grouped into a batch:
+ * - Effects are queued during the batch
+ * - Effects execute only when the outermost batch ends
+ * - Listeners see the final consistent state, not intermediate states
+ *
+ * ## Thread-Safety
+ *
+ * - All operations use atomic primitives (AtomicInteger, ConcurrentLinkedQueue)
+ * - No blocking synchronization avoids deadlocks
+ * - Effects are executed serially to prevent reentrancy issues
  */
 object SignalGraph {
 

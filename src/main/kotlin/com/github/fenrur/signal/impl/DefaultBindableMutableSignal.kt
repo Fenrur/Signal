@@ -170,16 +170,26 @@ class DefaultBindableMutableSignal<T>(
         get() = validateAndGetTyped()
         set(newValue) {
             if (isClosed) return
-            val data = bindingData.get()
+            // Capture binding data atomically to prevent race with concurrent bindTo()
+            // We intentionally write to the signal that was bound at the time of this call,
+            // even if another thread is concurrently rebinding to a different signal.
+            val signal = bindingData.get()?.signal
                 ?: throw IllegalStateException("BindableMutableSignal is not bound")
-            data.signal.value = newValue
+            if (signal.isClosed) {
+                throw IllegalStateException("Bound signal has been closed")
+            }
+            signal.value = newValue
         }
 
     override fun update(transform: (T) -> T) {
         if (isClosed) return
-        val data = bindingData.get()
+        // Capture binding data atomically to prevent race with concurrent bindTo()
+        val signal = bindingData.get()?.signal
             ?: throw IllegalStateException("BindableMutableSignal is not bound")
-        data.signal.update(transform)
+        if (signal.isClosed) {
+            throw IllegalStateException("Bound signal has been closed")
+        }
+        signal.update(transform)
     }
 
     override fun validateAndGet(): Any? = validateAndGetTyped()

@@ -16,10 +16,22 @@ import java.util.concurrent.atomic.AtomicReference
  * - Lazy subscription management
  * - Version tracking for change detection
  * - Effect scheduling for subscriber notifications
+ * - Exception handling for compute functions
  *
  * Subclasses only need to implement [computeValue] and [sources].
  *
- * Thread-safety: All operations are thread-safe using atomic operations.
+ * ## Thread-Safety
+ *
+ * All operations are thread-safe using atomic operations. No blocking
+ * synchronization is used to avoid deadlocks.
+ *
+ * ## Exception Handling
+ *
+ * If [computeValue] throws an exception:
+ * 1. The exception is stored and rethrown on subsequent value reads
+ * 2. Listeners are notified via Result.failure()
+ * 3. The cached value is preserved (last known good value)
+ * 4. When the source changes, computation is retried
  *
  * @param R the type of value held by this signal
  */
@@ -30,6 +42,12 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
     protected val closed = AtomicBoolean(false)
     protected val subscribed = AtomicBoolean(false)
     protected val unsubscribers = AtomicReference<List<UnSubscriber>>(emptyList())
+
+    /**
+     * Stores the last exception thrown by [computeValue].
+     * Cleared when computation succeeds or sources change.
+     */
+    protected val lastComputeError = AtomicReference<Throwable?>(null)
 
     // Glitch-free infrastructure
     protected val flag = AtomicReference(SignalFlag.CLEAN)
@@ -71,10 +89,15 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
         override fun execute() {
             pending.set(false)
             if (!closed.get() && listeners.isNotEmpty()) {
-                val currentValue = this@AbstractComputedSignal.value
-                val currentVersion = _version.get()
-                if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
-                    notifyAllValue(listeners.toList(), currentValue)
+                try {
+                    val currentValue = this@AbstractComputedSignal.value
+                    val currentVersion = _version.get()
+                    if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
+                        notifyAllValue(listeners.toList(), currentValue)
+                    }
+                } catch (e: Throwable) {
+                    // Notify listeners of the computation error
+                    notifyAllError(listeners.toList(), e)
                 }
             }
         }
@@ -123,6 +146,16 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
     }
 
     protected open fun validateAndGetTyped(): R {
+        // Check for stored error and rethrow if present
+        lastComputeError.get()?.let { error ->
+            // Only rethrow if we haven't had a source change
+            if (!hasSourcesChanged()) {
+                throw error
+            }
+            // Source changed, clear error and retry
+            lastComputeError.set(null)
+        }
+
         when (flag.get()) {
             SignalFlag.CLEAN -> {
                 if (!hasSourcesChanged()) {
@@ -140,10 +173,20 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
             SignalFlag.DIRTY -> {}
         }
 
-        // Recompute
-        val newValue = computeValue()
-        val oldValue = cachedValue.get()
+        // Recompute with exception handling
+        val newValue = try {
+            computeValue()
+        } catch (e: Throwable) {
+            // Store error for subsequent reads
+            lastComputeError.set(e)
+            // Update source versions so we don't keep retrying with same input
+            updateSourceVersions()
+            flag.set(SignalFlag.CLEAN)
+            // Rethrow - listeners are notified through the effect mechanism
+            throw e
+        }
 
+        val oldValue = cachedValue.get()
         updateSourceVersions()
 
         if (oldValue != newValue) {
