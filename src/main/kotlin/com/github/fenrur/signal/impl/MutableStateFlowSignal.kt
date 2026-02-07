@@ -22,7 +22,21 @@ import java.util.concurrent.atomic.AtomicReference
  * Implements [SourceSignalNode] for glitch-free integration with the dependency graph.
  * Uses lazy subscription - only collects from StateFlow when there are listeners or targets.
  *
- * Thread-safety: All operations are thread-safe.
+ * ## Thread-Safety
+ *
+ * All operations are thread-safe. The implementation uses a dual-guard pattern to prevent
+ * double notifications when updating via signal vs external StateFlow updates:
+ *
+ * 1. **selfUpdateVersion**: Tracks which version update is currently in progress from the signal side.
+ *    The collector checks this and skips if the current version matches (we're updating ourselves).
+ *
+ * 2. **lastNotifiedValue**: Provides defense-in-depth by tracking the last value notified to subscribers.
+ *    Even if the version check fails due to timing, duplicate values are filtered out.
+ *
+ * This two-level protection ensures no duplicate notifications under any interleaving of:
+ * - Concurrent signal updates from multiple threads
+ * - Concurrent external StateFlow updates
+ * - Coroutine collector executing at any point
  *
  * @param T the type of value held by the signal
  * @param stateFlow the MutableStateFlow to back this signal
@@ -46,8 +60,12 @@ class MutableStateFlowSignal<T>(
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.get()
 
-    // Flag to prevent double notification when we set the value ourselves
-    private val selfUpdating = AtomicBoolean(false)
+    /**
+     * Tracks the version we're currently updating to from the signal side.
+     * -1 means no self-update in progress.
+     * The collector skips notifications when this matches the current version being set.
+     */
+    private val selfUpdateVersion = AtomicLong(-1L)
 
     private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
@@ -65,9 +83,13 @@ class MutableStateFlowSignal<T>(
             val job = scope.launch {
                 stateFlow.collect { newValue ->
                     if (closed.get()) return@collect
-                    // Skip if we're the one updating (avoid double notification)
-                    if (selfUpdating.get()) return@collect
 
+                    // Skip if we're the one updating (avoid double notification).
+                    // Check if the current version matches our self-update version.
+                    val currentVersion = _version.get()
+                    if (selfUpdateVersion.get() == currentVersion) return@collect
+
+                    // Defense-in-depth: also check if value actually changed
                     val old = lastNotifiedValue.getAndSet(newValue)
                     if (old != newValue) {
                         // External update detected
@@ -108,14 +130,15 @@ class MutableStateFlowSignal<T>(
                 val current = stateFlow.value
                 if (current == newValue) return
 
-                // Mark that we're updating to prevent collect from double-notifying
-                selfUpdating.set(true)
-                try {
-                    if (stateFlow.compareAndSet(current, newValue)) {
-                        lastNotifiedValue.set(newValue)
-                        _version.incrementAndGet()
-                        SignalGraph.incrementGlobalVersion()
+                if (stateFlow.compareAndSet(current, newValue)) {
+                    lastNotifiedValue.set(newValue)
+                    val newVersion = _version.incrementAndGet()
+                    SignalGraph.incrementGlobalVersion()
 
+                    // Mark the version we're updating to prevent collector from double-notifying.
+                    // This is set AFTER incrementing version so the collector can check it.
+                    selfUpdateVersion.set(newVersion)
+                    try {
                         SignalGraph.startBatch()
                         try {
                             for (target in targets) {
@@ -127,10 +150,10 @@ class MutableStateFlowSignal<T>(
                         } finally {
                             SignalGraph.endBatch()
                         }
-                        return
+                    } finally {
+                        selfUpdateVersion.set(-1L)
                     }
-                } finally {
-                    selfUpdating.set(false)
+                    return
                 }
                 // CAS failed, retry
                 if (closed.get()) return
@@ -144,13 +167,14 @@ class MutableStateFlowSignal<T>(
             val next = transform(current)
             if (current == next) return
 
-            selfUpdating.set(true)
-            try {
-                if (stateFlow.compareAndSet(current, next)) {
-                    lastNotifiedValue.set(next)
-                    _version.incrementAndGet()
-                    SignalGraph.incrementGlobalVersion()
+            if (stateFlow.compareAndSet(current, next)) {
+                lastNotifiedValue.set(next)
+                val newVersion = _version.incrementAndGet()
+                SignalGraph.incrementGlobalVersion()
 
+                // Mark the version we're updating to prevent collector from double-notifying
+                selfUpdateVersion.set(newVersion)
+                try {
                     SignalGraph.startBatch()
                     try {
                         for (target in targets) {
@@ -162,10 +186,10 @@ class MutableStateFlowSignal<T>(
                     } finally {
                         SignalGraph.endBatch()
                     }
-                    return
+                } finally {
+                    selfUpdateVersion.set(-1L)
                 }
-            } finally {
-                selfUpdating.set(false)
+                return
             }
             if (closed.get()) return
         }

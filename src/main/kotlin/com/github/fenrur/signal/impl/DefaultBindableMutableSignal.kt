@@ -17,7 +17,16 @@ import java.util.concurrent.atomic.AtomicReference
  * When the bound signal changes, this signal propagates dirty marks to its targets.
  * Uses lazy subscription - only subscribes to bound signal when there are listeners or targets.
  *
- * Thread-safety: All operations are thread-safe.
+ * ## Thread-Safety
+ *
+ * All operations are thread-safe. The binding operation uses a two-phase commit:
+ * 1. Pre-check: Validate that binding would not create a cycle (fast path rejection)
+ * 2. Atomic bind: Atomically update the binding reference
+ * 3. Post-check: Verify no cycle was created by a concurrent binding operation
+ * 4. Rollback if needed: If a cycle was detected post-binding, rollback and throw
+ *
+ * This ensures that even under concurrent binding operations, no cycles can exist
+ * in the binding graph.
  *
  * @param T the type of value held by the signal
  * @param initial optional initial signal to bind to
@@ -238,6 +247,7 @@ class DefaultBindableMutableSignal<T>(
     private fun bindToInternal(newSignal: MutableSignal<T>, notifyListeners: Boolean) {
         if (isClosed) return
 
+        // Phase 1: Pre-check for cycles (fast path rejection)
         if (BindableMutableSignal.wouldCreateCycle(this, newSignal)) {
             throw IllegalStateException("Circular binding detected: binding would create a cycle")
         }
@@ -248,7 +258,20 @@ class DefaultBindableMutableSignal<T>(
             result.onFailure { ex -> notifyAllError(listeners.toList(), ex) }
         }
 
+        // Phase 2: Atomic bind
         val oldData = bindingData.getAndSet(BindingData(newSignal, unSub))
+
+        // Phase 3: Post-check for cycles (detect concurrent binding race)
+        // Another thread might have bound in a way that now creates a cycle
+        if (BindableMutableSignal.wouldCreateCycle(this, newSignal)) {
+            // Phase 4: Rollback - restore old binding
+            bindingData.set(oldData)
+            try {
+                unSub.invoke()
+            } catch (_: Throwable) {
+            }
+            throw IllegalStateException("Circular binding detected: concurrent binding created a cycle")
+        }
 
         // Clean up old binding
         oldData?.let { data ->

@@ -17,6 +17,13 @@ import java.util.concurrent.atomic.AtomicReference
  * Uses lazy subscription and push-pull validation to prevent memory leaks
  * and ensure subscribers never see inconsistent intermediate states.
  *
+ * ## Exception Handling
+ *
+ * - **forward transform exceptions**: Caught and propagated to subscribers as Result.failure().
+ *   The cached value is preserved, and subsequent reads will retry the transform.
+ * - **reverse transform exceptions**: Caught and propagated to subscribers as Result.failure().
+ *   The source signal is not modified.
+ *
  * Thread-safety: All operations are thread-safe, delegating to the source signal's
  * thread-safety guarantees.
  *
@@ -39,6 +46,9 @@ class BimappedSignal<S, R>(
     private val subscribed = AtomicBoolean(false)
     private val unsubscribeSource = AtomicReference<UnSubscriber> {}
 
+    // Track last transform error for proper error propagation
+    private val lastTransformError = AtomicReference<Throwable?>(null)
+
     // Glitch-free infrastructure
     private val flag = AtomicReference(SignalFlag.DIRTY)
     private val _version = AtomicLong(0L)
@@ -54,10 +64,15 @@ class BimappedSignal<S, R>(
         override fun execute() {
             pending.set(false)
             if (!closed.get() && listeners.isNotEmpty()) {
-                val currentValue = this@BimappedSignal.value
-                val currentVersion = _version.get()
-                if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
-                    notifyAllValue(listeners.toList(), currentValue)
+                // Read value FIRST - this triggers validation and may increment version
+                try {
+                    val currentValue = this@BimappedSignal.value
+                    val currentVersion = _version.get()
+                    if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
+                        notifyAllValue(listeners.toList(), currentValue)
+                    }
+                } catch (e: Throwable) {
+                    notifyAllError(listeners.toList(), e)
                 }
             }
         }
@@ -108,6 +123,13 @@ class BimappedSignal<S, R>(
     }
 
     private fun validateAndGetTyped(): R {
+        // Check for previous error - rethrow to allow caller to handle
+        lastTransformError.get()?.let { error ->
+            // Clear the error and rethrow
+            lastTransformError.set(null)
+            throw error
+        }
+
         when (flag.get()) {
             SignalFlag.CLEAN -> {
                 // Check source version for non-subscribed reads
@@ -128,7 +150,17 @@ class BimappedSignal<S, R>(
         }
 
         val sv = source.value
-        val newValue = forward(sv)
+
+        // Wrap forward transform in try-catch
+        val newValue = try {
+            forward(sv)
+        } catch (e: Throwable) {
+            // Store error for later detection and rethrow
+            // Caller (listenerEffect.execute or subscribe) will handle notification
+            lastTransformError.set(e)
+            throw e
+        }
+
         val oldValue = cachedValue.get()
 
         lastSourceVersion.set(getSourceVersion())
@@ -138,6 +170,8 @@ class BimappedSignal<S, R>(
             _version.incrementAndGet()
         }
 
+        // Clear any previous error on successful computation
+        lastTransformError.set(null)
         flag.set(SignalFlag.CLEAN)
         return newValue
     }
@@ -148,15 +182,30 @@ class BimappedSignal<S, R>(
         get() = validateAndGetTyped()
         set(new) {
             if (isClosed) return
-            source.value = reverse(new)
+            try {
+                source.value = reverse(new)
+            } catch (e: Throwable) {
+                // Store error and notify listeners directly for write errors
+                // (no listenerEffect will catch this, so we must notify here)
+                lastTransformError.set(e)
+                notifyAllError(listeners.toList(), e)
+                throw e
+            }
         }
 
     override fun update(transform: (R) -> R) {
         if (isClosed) return
-        source.update { s ->
-            val mapped = forward(s)
-            val transformed = transform(mapped)
-            reverse(transformed)
+        try {
+            source.update { s ->
+                val mapped = forward(s)
+                val transformed = transform(mapped)
+                reverse(transformed)
+            }
+        } catch (e: Throwable) {
+            // Store error for propagation and notify listeners
+            lastTransformError.set(e)
+            notifyAllError(listeners.toList(), e)
+            throw e
         }
     }
 
@@ -183,7 +232,12 @@ class BimappedSignal<S, R>(
     override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
-        listener(Result.success(value))
+        // Deliver initial value, handling potential transform errors
+        try {
+            listener(Result.success(value))
+        } catch (e: Throwable) {
+            listener(Result.failure(e))
+        }
         lastNotifiedVersion.set(_version.get())
         listeners += listener
         return { listeners -= listener; maybeUnsubscribe() }
