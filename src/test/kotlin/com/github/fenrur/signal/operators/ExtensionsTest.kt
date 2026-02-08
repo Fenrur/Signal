@@ -548,7 +548,7 @@ class ExtensionsTest {
     fun `zip combines two signals into pair`() {
         val a = DefaultMutableSignal(10)
         val b = DefaultMutableSignal("hello")
-        val zipped = a.zip(b)
+        val zipped = zip(a, b)
 
         assertThat(zipped.value).isEqualTo(10 to "hello")
     }
@@ -557,7 +557,7 @@ class ExtensionsTest {
     fun `zip updates when either signal changes`() {
         val a = DefaultMutableSignal(10)
         val b = DefaultMutableSignal("hello")
-        val zipped = a.zip(b)
+        val zipped = zip(a, b)
 
         a.value = 20
         assertThat(zipped.value).isEqualTo(20 to "hello")
@@ -571,9 +571,45 @@ class ExtensionsTest {
         val a = DefaultMutableSignal(1)
         val b = DefaultMutableSignal("two")
         val c = DefaultMutableSignal(3.0)
-        val zipped = a.zip(b, c)
+        val zipped = zip(a, b, c)
 
         assertThat(zipped.value).isEqualTo(Triple(1, "two", 3.0))
+    }
+
+    @Test
+    fun `zip4 combines four signals into Tuple4`() {
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val zipped = zip(a, b, c, d)
+
+        assertThat(zipped.value).isEqualTo(Tuple4(1, "two", 3.0, true))
+    }
+
+    @Test
+    fun `zip5 combines five signals into Tuple5`() {
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val e = DefaultMutableSignal('x')
+        val zipped = zip(a, b, c, d, e)
+
+        assertThat(zipped.value).isEqualTo(Tuple5(1, "two", 3.0, true, 'x'))
+    }
+
+    @Test
+    fun `zip6 combines six signals into Tuple6`() {
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val e = DefaultMutableSignal('x')
+        val f = DefaultMutableSignal(100L)
+        val zipped = zip(a, b, c, d, e, f)
+
+        assertThat(zipped.value).isEqualTo(Tuple6(1, "two", 3.0, true, 'x', 100L))
     }
 
     // ==================== withLatestFrom ====================

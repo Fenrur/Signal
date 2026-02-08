@@ -7,6 +7,43 @@ import com.github.fenrur.signal.MutableSignal
 import com.github.fenrur.signal.impl.*
 
 // =============================================================================
+// TUPLE DATA CLASSES (for zip with 4+ signals)
+// =============================================================================
+
+/**
+ * Represents a tuple of four values.
+ */
+data class Tuple4<out A, out B, out C, out D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
+
+/**
+ * Represents a tuple of five values.
+ */
+data class Tuple5<out A, out B, out C, out D, out E>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E
+)
+
+/**
+ * Represents a tuple of six values.
+ */
+data class Tuple6<out A, out B, out C, out D, out E, out F>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E,
+    val sixth: F
+)
+
+// =============================================================================
 // TRANSFORMATION OPERATORS
 // =============================================================================
 
@@ -228,16 +265,54 @@ fun <A, B, C, D, E, F, R> combine(
 ): Signal<R> = CombinedSignal6(sa, sb, sc, sd, se, sf, transform)
 
 /**
- * Combines with another signal into a Pair.
+ * Zips two signals into a Pair.
  */
-fun <A, B> Signal<A>.zip(other: Signal<B>): Signal<Pair<A, B>> =
-    combine(this, other) { a, b -> a to b }
+fun <A, B> zip(
+    sa: Signal<A>,
+    sb: Signal<B>
+): Signal<Pair<A, B>> = combine(sa, sb) { a, b -> a to b }
 
 /**
- * Combines with two other signals into a Triple.
+ * Zips three signals into a Triple.
  */
-fun <A, B, C> Signal<A>.zip(second: Signal<B>, third: Signal<C>): Signal<Triple<A, B, C>> =
-    combine(this, second, third) { a, b, c -> Triple(a, b, c) }
+fun <A, B, C> zip(
+    sa: Signal<A>,
+    sb: Signal<B>,
+    sc: Signal<C>
+): Signal<Triple<A, B, C>> = combine(sa, sb, sc) { a, b, c -> Triple(a, b, c) }
+
+/**
+ * Zips four signals into a Tuple4.
+ */
+fun <A, B, C, D> zip(
+    sa: Signal<A>,
+    sb: Signal<B>,
+    sc: Signal<C>,
+    sd: Signal<D>
+): Signal<Tuple4<A, B, C, D>> = combine(sa, sb, sc, sd) { a, b, c, d -> Tuple4(a, b, c, d) }
+
+/**
+ * Zips five signals into a Tuple5.
+ */
+fun <A, B, C, D, E> zip(
+    sa: Signal<A>,
+    sb: Signal<B>,
+    sc: Signal<C>,
+    sd: Signal<D>,
+    se: Signal<E>
+): Signal<Tuple5<A, B, C, D, E>> = combine(sa, sb, sc, sd, se) { a, b, c, d, e -> Tuple5(a, b, c, d, e) }
+
+/**
+ * Zips six signals into a Tuple6.
+ */
+fun <A, B, C, D, E, F> zip(
+    sa: Signal<A>,
+    sb: Signal<B>,
+    sc: Signal<C>,
+    sd: Signal<D>,
+    se: Signal<E>,
+    sf: Signal<F>
+): Signal<Tuple6<A, B, C, D, E, F>> = combine(sa, sb, sc, sd, se, sf) { a, b, c, d, e, f -> Tuple6(a, b, c, d, e, f) }
 
 /**
  * Combines with latest value from another signal.

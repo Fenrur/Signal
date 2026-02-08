@@ -138,7 +138,7 @@ class ComprehensiveThreadSafetyTest {
     fun `concurrent - zip operator thread safety`() {
         val a = DefaultMutableSignal(0)
         val b = DefaultMutableSignal("init")
-        val zipped = a.zip(b)
+        val zipped = zip(a, b)
         val emissions = CopyOnWriteArrayList<Pair<Int, String>>()
 
         zipped.subscribe { result ->
