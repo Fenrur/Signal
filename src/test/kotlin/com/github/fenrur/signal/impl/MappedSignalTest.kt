@@ -1,12 +1,24 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.AbstractSignalTest
 import com.github.fenrur.signal.Signal
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
-class MappedSignalTest {
+/**
+ * Tests for MappedSignal.
+ * Extends AbstractSignalTest for common Signal interface tests.
+ */
+class MappedSignalTest : AbstractSignalTest<Signal<Int>>() {
+
+    override fun createSignal(initial: Int): Signal<Int> {
+        val source = DefaultMutableSignal(initial)
+        return MappedSignal(source) { it } // Identity mapping for abstract test compatibility
+    }
+
+    // ==================== MappedSignal-specific tests ====================
 
     @Test
     fun `mapped signal transforms value`() {
@@ -66,18 +78,6 @@ class MappedSignalTest {
     }
 
     @Test
-    fun `mapped signal closes properly`() {
-        val source = DefaultMutableSignal(10)
-        val mapped = MappedSignal(source) { it * 2 }
-
-        assertThat(mapped.isClosed).isFalse()
-
-        mapped.close()
-
-        assertThat(mapped.isClosed).isTrue()
-    }
-
-    @Test
     fun `mapped signal stops receiving after close`() {
         val source = DefaultMutableSignal(10)
         val mapped = MappedSignal(source) { it * 2 }
@@ -98,23 +98,5 @@ class MappedSignalTest {
         val mapped: Signal<String> = MappedSignal(source) { "Number: $it" }
 
         assertThat(mapped.value).isEqualTo("Number: 42")
-    }
-
-    @Test
-    fun `mapped signal propagates errors`() {
-        val source = DefaultMutableSignal(10)
-        val mapped = MappedSignal(source) { it * 2 }
-        val errors = CopyOnWriteArrayList<Throwable>()
-
-        mapped.subscribe { result ->
-            result.fold(
-                onSuccess = { },
-                onFailure = { errors.add(it) }
-            )
-        }
-
-        // Note: Standard signal implementations don't emit errors on value change,
-        // so this test verifies the error path exists but may not trigger in normal use
-        assertThat(errors).isEmpty()
     }
 }

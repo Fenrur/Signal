@@ -586,4 +586,52 @@ class ResourceCleanupTest {
         assertThat(source.isClosed).isTrue()
         assertThat(values).contains(0, 3)
     }
+
+    // =========================================================================
+    // WEAK REFERENCE PATTERNS (GC BEST EFFORT)
+    // =========================================================================
+
+    @Test
+    fun `signal reference pattern - verify unsubscribe allows potential cleanup`() {
+        val signal = DefaultMutableSignal(1)
+
+        // Create and immediately release a reference
+        var ref: (() -> Unit)? = signal.subscribe { }
+        ref?.invoke() // Unsubscribe
+        ref = null
+
+        // At this point, the listener should be eligible for GC
+        // We don't assert GC because it's non-deterministic
+        System.gc()
+    }
+
+    @Test
+    fun `chain reference pattern - verify close allows potential cleanup`() {
+        val source = DefaultMutableSignal(1)
+        var chain: Signal<Int>? = source.map { it * 2 }.map { it + 1 }
+
+        chain?.subscribe { }
+        chain?.close()
+        chain = null
+
+        // Chain should be eligible for GC
+        System.gc()
+    }
+
+    @Test
+    fun `deep chain pattern - verify cleanup after unsubscribe`() {
+        val source = DefaultMutableSignal(1)
+
+        var chain: Signal<Int>? = source
+        repeat(20) {
+            chain = chain!!.map { it + 1 }
+        }
+
+        val unsub = chain!!.subscribe { }
+        unsub()
+        chain = null
+
+        // Deep chain should be eligible for GC
+        System.gc()
+    }
 }

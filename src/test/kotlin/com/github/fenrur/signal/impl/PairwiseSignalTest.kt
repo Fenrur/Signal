@@ -5,7 +5,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 
+/**
+ * Tests for PairwiseSignal.
+ * Note: PairwiseSignal returns Pair<T, T> so it cannot extend AbstractSignalTest<Signal<Int>>.
+ */
 class PairwiseSignalTest {
+
+    // ==================== PairwiseSignal-specific tests ====================
 
     @Test
     fun `pairwise signal returns initial pair of same value`() {

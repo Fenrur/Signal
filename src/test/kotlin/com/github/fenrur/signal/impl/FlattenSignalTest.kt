@@ -1,11 +1,24 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.AbstractSignalTest
 import com.github.fenrur.signal.Signal
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 
-class FlattenSignalTest {
+/**
+ * Tests for FlattenSignal.
+ * Extends AbstractSignalTest for common Signal interface tests.
+ */
+class FlattenSignalTest : AbstractSignalTest<Signal<Int>>() {
+
+    override fun createSignal(initial: Int): Signal<Int> {
+        val inner = DefaultMutableSignal(initial)
+        val outer = DefaultMutableSignal(inner as Signal<Int>)
+        return FlattenSignal(outer)
+    }
+
+    // ==================== FlattenSignal-specific tests ====================
 
     @Test
     fun `flatten signal returns inner signal value`() {
@@ -111,19 +124,6 @@ class FlattenSignalTest {
     }
 
     @Test
-    fun `flatten signal closes properly`() {
-        val inner = DefaultMutableSignal(42)
-        val outer = DefaultMutableSignal(inner as Signal<Int>)
-        val flattened = FlattenSignal(outer)
-
-        assertThat(flattened.isClosed).isFalse()
-
-        flattened.close()
-
-        assertThat(flattened.isClosed).isTrue()
-    }
-
-    @Test
     fun `flatten signal stops receiving after close`() {
         val inner = DefaultMutableSignal(10)
         val outer = DefaultMutableSignal(inner as Signal<Int>)
@@ -154,20 +154,6 @@ class FlattenSignalTest {
         inner.value = 30
 
         assertThat(values).containsExactly(20)
-    }
-
-    @Test
-    fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val inner = DefaultMutableSignal(42)
-        val outer = DefaultMutableSignal(inner as Signal<Int>)
-        val flattened = FlattenSignal(outer)
-        flattened.close()
-
-        val values = CopyOnWriteArrayList<Int>()
-        val unsubscribe = flattened.subscribe { it.onSuccess { v -> values.add(v) } }
-
-        assertThat(values).isEmpty()
-        unsubscribe() // Should not throw
     }
 
     @Test

@@ -1,11 +1,24 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.AbstractSignalTest
+import com.github.fenrur.signal.Signal
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
-class FilteredSignalTest {
+/**
+ * Tests for FilteredSignal.
+ * Extends AbstractSignalTest for common Signal interface tests.
+ */
+class FilteredSignalTest : AbstractSignalTest<Signal<Int>>() {
+
+    override fun createSignal(initial: Int): Signal<Int> {
+        val source = DefaultMutableSignal(initial)
+        return FilteredSignal(source) { it > 0 } // Filter passes positive values
+    }
+
+    // ==================== FilteredSignal-specific tests ====================
 
     @Test
     fun `filtered signal returns initial value when predicate matches`() {
@@ -65,18 +78,6 @@ class FilteredSignalTest {
     }
 
     @Test
-    fun `filtered signal closes properly`() {
-        val source = DefaultMutableSignal(10)
-        val filtered = FilteredSignal(source) { it > 5 }
-
-        assertThat(filtered.isClosed).isFalse()
-
-        filtered.close()
-
-        assertThat(filtered.isClosed).isTrue()
-    }
-
-    @Test
     fun `filtered signal stops receiving after close`() {
         val source = DefaultMutableSignal(10)
         val filtered = FilteredSignal(source) { it > 5 }
@@ -89,19 +90,6 @@ class FilteredSignalTest {
         source.value = 20
 
         assertThat(values).isEmpty()
-    }
-
-    @Test
-    fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = DefaultMutableSignal(10)
-        val filtered = FilteredSignal(source) { it > 5 }
-        filtered.close()
-
-        val values = CopyOnWriteArrayList<Int>()
-        val unsubscribe = filtered.subscribe { it.onSuccess { v -> values.add(v) } }
-
-        assertThat(values).isEmpty()
-        unsubscribe() // Should not throw
     }
 
     @Test

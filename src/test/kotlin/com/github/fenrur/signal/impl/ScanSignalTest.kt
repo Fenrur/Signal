@@ -1,11 +1,25 @@
 package com.github.fenrur.signal.impl
 
+import com.github.fenrur.signal.AbstractSignalTest
+import com.github.fenrur.signal.Signal
 import com.github.fenrur.signal.operators.scan
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ScanSignalTest {
+/**
+ * Tests for ScanSignal.
+ * Extends AbstractSignalTest for common Signal interface tests.
+ */
+class ScanSignalTest : AbstractSignalTest<Signal<Int>>() {
+
+    override fun createSignal(initial: Int): Signal<Int> {
+        val source = DefaultMutableSignal(initial)
+        // Use identity-like scan: initial value is passed through, only new values accumulate
+        return source.scan(initial) { _, value -> value }
+    }
+
+    // ==================== ScanSignal-specific tests ====================
 
     @Test
     fun `scan signal applies accumulator to initial value`() {
@@ -113,18 +127,6 @@ class ScanSignalTest {
     }
 
     @Test
-    fun `scan signal closes properly`() {
-        val source = DefaultMutableSignal(10)
-        val scan = source.scan(0) { acc, value -> acc + value }
-
-        assertThat(scan.isClosed).isFalse()
-
-        scan.close()
-
-        assertThat(scan.isClosed).isTrue()
-    }
-
-    @Test
     fun `scan signal stops receiving after close`() {
         val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
@@ -153,19 +155,6 @@ class ScanSignalTest {
         source.value = 3
 
         assertThat(values).containsExactly(3)
-    }
-
-    @Test
-    fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = DefaultMutableSignal(10)
-        val scan = source.scan(0) { acc, value -> acc + value }
-        scan.close()
-
-        val values = CopyOnWriteArrayList<Int>()
-        val unsubscribe = scan.subscribe { it.onSuccess { v -> values.add(v) } }
-
-        assertThat(values).isEmpty()
-        unsubscribe() // Should not throw
     }
 
     @Test
