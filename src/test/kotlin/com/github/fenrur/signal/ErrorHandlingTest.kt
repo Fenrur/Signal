@@ -316,6 +316,73 @@ class ErrorHandlingTest {
         assertThat(values).contains(30)
     }
 
+    @Test
+    fun `flatten signal propagates inner signal computation errors via Result_failure`() {
+        var shouldThrow = false
+        val inner = DefaultMutableSignal(10)
+        val mappedInner = inner.map { v: Int ->
+            if (shouldThrow) throw RuntimeException("Inner computation error")
+            v * 2
+        }
+        val outer = DefaultMutableSignal<Signal<Int>>(mappedInner)
+        val flattened = FlattenSignal(outer)
+
+        val errors = CopyOnWriteArrayList<Throwable>()
+        val values = CopyOnWriteArrayList<Int>()
+
+        flattened.subscribe { result ->
+            result.onSuccess { values.add(it) }
+            result.onFailure { errors.add(it) }
+        }
+
+        // Clear initial value
+        values.clear()
+
+        // Normal update works
+        inner.value = 5
+        assertThat(values).contains(10) // 5 * 2
+
+        // Cause inner computation to throw
+        shouldThrow = true
+        inner.value = 7
+
+        // Error should be propagated via Result.failure()
+        // Note: errors may propagate from multiple paths in the signal graph
+        assertThat(errors).isNotEmpty()
+        assertThat(errors.all { it is RuntimeException && it.message == "Inner computation error" }).isTrue()
+    }
+
+    @Test
+    fun `flatten signal recovers after inner computation error`() {
+        var shouldThrow = false
+        val inner = DefaultMutableSignal(10)
+        val mappedInner = inner.map { v: Int ->
+            if (shouldThrow) throw RuntimeException("Error")
+            v * 2
+        }
+        val outer = DefaultMutableSignal<Signal<Int>>(mappedInner)
+        val flattened = FlattenSignal(outer)
+
+        val errors = CopyOnWriteArrayList<Throwable>()
+
+        flattened.subscribe { result ->
+            result.onFailure { errors.add(it) }
+        }
+
+        // Cause error
+        shouldThrow = true
+        inner.value = 5
+        assertThat(errors).isNotEmpty()
+
+        // Recover - clear the throw condition and verify signal becomes usable again
+        shouldThrow = false
+        inner.value = 7
+
+        // After recovery, reading value should work without throwing
+        val recoveredValue = flattened.value
+        assertThat(recoveredValue).isEqualTo(14) // 7 * 2
+    }
+
     // =========================================================================
     // CLOSE DURING ERROR STATE
     // =========================================================================

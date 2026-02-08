@@ -47,10 +47,14 @@ class FlattenSignal<T>(
         override fun execute() {
             pending.set(false)
             if (!closed.get() && listeners.isNotEmpty()) {
-                val currentValue = this@FlattenSignal.value
-                val currentVersion = _version.get()
-                if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
-                    notifyAllValue(listeners.toList(), currentValue)
+                try {
+                    val currentValue = this@FlattenSignal.value
+                    val currentVersion = _version.get()
+                    if (lastNotifiedVersion.getAndSet(currentVersion) != currentVersion) {
+                        notifyAllValue(listeners.toList(), currentValue)
+                    }
+                } catch (e: Throwable) {
+                    notifyAllError(listeners.toList(), e)
                 }
             }
         }
