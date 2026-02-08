@@ -41,6 +41,9 @@ class FlattenSignal<T>(
     private val lastInnerVersion = AtomicLong(-1L)
     private val lastNotifiedVersion = AtomicLong(-1L)
 
+    // Exception handling - stores last computation error for rethrow on subsequent reads
+    private val lastComputeError = AtomicReference<Throwable?>(null)
+
     private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
@@ -102,24 +105,33 @@ class FlattenSignal<T>(
         else -> SignalGraph.globalVersion.get()
     }
 
+    private fun hasSourcesChanged(): Boolean {
+        val outerVer = getVersion(source)
+        val inner = currentInner.get()
+        val innerVer = inner?.let { getVersion(it) } ?: -1L
+        return outerVer != lastOuterVersion.get() || innerVer != lastInnerVersion.get()
+    }
+
     private fun validateAndGetTyped(): T {
+        // Check for stored error and rethrow if sources haven't changed
+        lastComputeError.get()?.let { error ->
+            if (!hasSourcesChanged()) {
+                throw error
+            }
+            // Sources changed, clear error and allow retry
+            lastComputeError.set(null)
+        }
+
         when (flag.get()) {
             SignalFlag.CLEAN -> {
                 // Check source versions for non-subscribed reads
-                val outerVer = getVersion(source)
-                val inner = currentInner.get()
-                val innerVer = inner?.let { getVersion(it) } ?: -1L
-                if (outerVer == lastOuterVersion.get() && innerVer == lastInnerVersion.get()) {
+                if (!hasSourcesChanged()) {
                     return cachedValue.get()
                 }
                 // Source changed, fall through to recompute
             }
             SignalFlag.MAYBE_DIRTY -> {
-                val outerVer = getVersion(source)
-                val inner = currentInner.get()
-                val innerVer = inner?.let { getVersion(it) } ?: -1L
-
-                if (outerVer != lastOuterVersion.get() || innerVer != lastInnerVersion.get()) {
+                if (hasSourcesChanged()) {
                     flag.set(SignalFlag.DIRTY)
                 } else {
                     flag.set(SignalFlag.CLEAN)
@@ -130,7 +142,13 @@ class FlattenSignal<T>(
         }
 
         // Get current inner signal
-        val newInner = source.value
+        val newInner = try {
+            source.value
+        } catch (e: Throwable) {
+            lastComputeError.set(e)
+            flag.set(SignalFlag.CLEAN)
+            throw e
+        }
         val oldInner = currentInner.get()
 
         // If inner signal changed, update registration
@@ -147,7 +165,15 @@ class FlattenSignal<T>(
             })
         }
 
-        val newValue = newInner.value
+        val newValue = try {
+            newInner.value
+        } catch (e: Throwable) {
+            lastComputeError.set(e)
+            lastOuterVersion.set(getVersion(source))
+            lastInnerVersion.set(getVersion(newInner))
+            flag.set(SignalFlag.CLEAN)
+            throw e
+        }
         val oldValue = cachedValue.get()
 
         lastOuterVersion.set(getVersion(source))
