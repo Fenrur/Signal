@@ -637,6 +637,96 @@ val signal = jdkPublisher.asJdkPublisher()
 val signal = jdkPublisher.asJdkPublisher(initial = 0)
 ```
 
+## Batching
+
+When updating multiple signals, each update normally triggers immediate notifications to subscribers. The `batch { }` function groups multiple signal mutations together, deferring all notifications until the batch completes. This prevents intermediate states and reduces unnecessary recomputations.
+
+```kotlin
+import com.github.fenrur.signal.*
+import com.github.fenrur.signal.operators.*
+
+val firstName = mutableSignalOf("John")
+val lastName = mutableSignalOf("Doe")
+val fullName = combine(firstName, lastName) { first, last -> "$first $last" }
+
+val emissions = mutableListOf<String>()
+fullName.subscribe { result ->
+    result.onSuccess { emissions.add(it) }
+}
+// emissions = ["John Doe"]
+
+// Without batch: each update triggers a notification
+firstName.value = "Jane"  // emissions = ["John Doe", "Jane Doe"]
+lastName.value = "Smith"  // emissions = ["John Doe", "Jane Doe", "Jane Smith"]
+
+// With batch: only one notification at the end
+batch {
+    firstName.value = "Bob"
+    lastName.value = "Wilson"
+}
+// emissions = ["John Doe", "Jane Doe", "Jane Smith", "Bob Wilson"]
+// Note: "Bob Doe" was never emitted!
+```
+
+### Nested Batches
+
+Batches can be nested. Only the outermost batch triggers notifications:
+
+```kotlin
+batch {
+    firstName.value = "Alice"
+    batch {
+        lastName.value = "Johnson"
+        // No notification yet
+    }
+    // Still no notification
+}
+// Now subscribers are notified with "Alice Johnson"
+```
+
+### Return Values
+
+`batch { }` returns the result of the block:
+
+```kotlin
+val result = batch {
+    firstName.value = "New"
+    lastName.value = "Name"
+    "Operation completed"
+}
+println(result) // "Operation completed"
+```
+
+### Use Cases
+
+- **Form submissions**: Update multiple form fields atomically
+- **State resets**: Reset multiple signals without intermediate states
+- **Complex calculations**: Update dependent values together
+- **Performance**: Reduce the number of recomputations in derived signals
+
+## Glitch-Free Semantics
+
+This library implements a push-pull model that guarantees glitch-free behavior:
+
+- **No intermediate states**: Derived signals never observe inconsistent intermediate values
+- **Diamond pattern safety**: In dependency graphs like `c = combine(a.map{}, b.map{})`, derived signals receive exactly one notification per source update
+- **Consistent snapshots**: Subscribers always see a consistent view of the signal graph
+
+```kotlin
+val source = mutableSignalOf(1)
+val doubled = source.map { it * 2 }
+val tripled = source.map { it * 3 }
+val sum = combine(doubled, tripled) { d, t -> d + t }
+
+val emissions = mutableListOf<Int>()
+sum.subscribe { it.onSuccess { v -> emissions.add(v) } }
+// emissions = [5] (2 + 3)
+
+source.value = 2
+// emissions = [5, 10] (4 + 6)
+// Note: [5, 7] or [5, 8] never appears (no glitch)
+```
+
 ## Thread Safety
 
 All signal implementations are thread-safe. Subscriptions, value reads, and value writes can be performed concurrently from multiple threads.
