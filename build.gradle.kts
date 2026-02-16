@@ -6,13 +6,14 @@ plugins {
 }
 
 group = "com.github.fenrur"
-version = System.getenv("VERSION") ?: "2.0.0"
+version = System.getenv("VERSION") ?: "2.0.1"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    implementation("com.vaadin:signals:25.0.6")
     // Kotlin Coroutines Flow is optional
     compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 

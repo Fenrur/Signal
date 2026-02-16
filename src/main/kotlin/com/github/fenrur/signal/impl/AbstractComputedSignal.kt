@@ -121,6 +121,17 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
                 }
             }
             unsubscribers.set(unsubs)
+
+            // Race 4 post-check: if close() ran during registration, undo
+            if (closed.get()) {
+                sources.forEach { source ->
+                    when (source) {
+                        is SourceSignalNode -> source.removeTarget(this)
+                        is ComputedSignalNode -> source.removeTarget(this)
+                    }
+                }
+                unsubscribers.getAndSet(emptyList()).forEach { it.invoke() }
+            }
         }
     }
 
@@ -133,6 +144,11 @@ abstract class AbstractComputedSignal<R> : Signal<R>, ComputedSignalNode {
                 }
             }
             unsubscribers.getAndSet(emptyList()).forEach { it.invoke() }
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

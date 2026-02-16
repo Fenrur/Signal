@@ -75,6 +75,10 @@ class FlowSignal<T>(
             publisher.subscribe(object : Flow.Subscriber<T> {
                 override fun onSubscribe(s: Flow.Subscription) {
                     subscription.set(s)
+                    if (closed.get()) {
+                        subscription.getAndSet(null)?.cancel()
+                        return
+                    }
                     s.request(request)
                 }
 
@@ -114,6 +118,11 @@ class FlowSignal<T>(
     private fun maybeUnsubscribe() {
         if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
             subscription.getAndSet(null)?.cancel()
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

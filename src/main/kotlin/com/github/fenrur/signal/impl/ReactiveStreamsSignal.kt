@@ -78,6 +78,10 @@ class ReactiveStreamsSignal<T>(
             publisher.subscribe(object : Subscriber<T> {
                 override fun onSubscribe(s: Subscription) {
                     subscription.set(s)
+                    if (closed.get()) {
+                        subscription.getAndSet(null)?.cancel()
+                        return
+                    }
                     s.request(request)
                 }
 
@@ -117,6 +121,11 @@ class ReactiveStreamsSignal<T>(
     private fun maybeUnsubscribe() {
         if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
             subscription.getAndSet(null)?.cancel()
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

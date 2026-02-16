@@ -110,6 +110,11 @@ class DefaultBindableSignal<T>(
             if (data != null) {
                 registerAsTarget(data.signal)
             }
+
+            // Race 4 post-check: if close() ran during registration, undo
+            if (closed.get() && data != null) {
+                unregisterAsTarget(data.signal)
+            }
         }
     }
 
@@ -118,6 +123,11 @@ class DefaultBindableSignal<T>(
             val data = bindingData.get()
             if (data != null) {
                 unregisterAsTarget(data.signal)
+            }
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
             }
         }
     }

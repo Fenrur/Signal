@@ -1,6 +1,7 @@
 package com.github.fenrur.signal.impl
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -87,8 +88,7 @@ object SignalGraph {
      * Whether we're currently flushing effects. Prevents recursive flush.
      */
     @JvmStatic
-    @Volatile
-    private var isFlushing = false
+    private val isFlushing = AtomicBoolean(false)
 
     /**
      * Executes a block within a batch context.
@@ -171,15 +171,14 @@ object SignalGraph {
      */
     @JvmStatic
     private fun flushEffects() {
-        if (isFlushing) return
-        isFlushing = true
+        if (!isFlushing.compareAndSet(false, true)) return
         try {
             while (true) {
                 val effect = pendingEffects.poll() ?: break
                 effect.execute()
             }
         } finally {
-            isFlushing = false
+            isFlushing.set(false)
         }
     }
 

@@ -38,9 +38,8 @@ class ScanSignal<T, R>(
 
     override fun computeValue(): R {
         val current = source.value
-        val lastValue = lastSourceValue.get()
+        val lastValue = lastSourceValue.getAndSet(current)
         return if (current != lastValue) {
-            lastSourceValue.set(current)
             accumulator(cachedValue.get(), current)
         } else {
             cachedValue.get()

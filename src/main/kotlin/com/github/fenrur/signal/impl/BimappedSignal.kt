@@ -85,6 +85,12 @@ class BimappedSignal<S, R>(
                 if (closed.get()) return@subscribe
                 result.onFailure { ex -> notifyAllError(listeners.toList(), ex) }
             })
+
+            // Race 4 post-check: if close() ran during registration, undo
+            if (closed.get()) {
+                unregisterAsTarget(source)
+                unsubscribeSource.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -108,6 +114,11 @@ class BimappedSignal<S, R>(
         if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
             unregisterAsTarget(source)
             unsubscribeSource.getAndSet {}.invoke()
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

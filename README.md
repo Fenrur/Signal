@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.fenrur:signal:1.0.0")
+    implementation("com.github.fenrur:signal:2.0.1")
 }
 ```
 
@@ -30,7 +30,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.fenrur:signal:1.0.0'
+    implementation 'com.github.fenrur:signal:2.0.1'
 }
 ```
 
@@ -47,7 +47,7 @@ dependencies {
 <dependency>
     <groupId>com.github.fenrur</groupId>
     <artifactId>signal</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.1</version>
 </dependency>
 ```
 

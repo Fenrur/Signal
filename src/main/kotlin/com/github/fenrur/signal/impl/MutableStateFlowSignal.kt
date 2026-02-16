@@ -111,12 +111,22 @@ class MutableStateFlowSignal<T>(
                 }
             }
             collectJob.set(job)
+
+            // Race 4 post-check: if close() ran during registration, undo
+            if (closed.get()) {
+                collectJob.getAndSet(null)?.cancel()
+            }
         }
     }
 
     private fun maybeUnsubscribe() {
         if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
             collectJob.getAndSet(null)?.cancel()
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

@@ -36,6 +36,21 @@ import kotlin.reflect.KProperty
  * - Exceptions thrown by listeners during subsequent notifications are caught and ignored
  * - Computed signals catch transformation exceptions and propagate them via `Result.failure()`
  *
+ * ## Close Semantics
+ *
+ * The [close] method provides **best-effort** cleanup under concurrent access. Because the
+ * library uses lock-free algorithms for performance, `close()` provides eventual cleanup
+ * rather than instant synchronization. Specifically:
+ *
+ * - **Listeners**: Listeners added concurrently with `close()` may still receive one notification
+ * - **Mutable values**: Values set concurrently with `close()` on [MutableSignal][com.github.fenrur.signal.MutableSignal] may still propagate
+ * - **Targets**: Targets added concurrently with `close()` may still receive dirty marks
+ * - **Reads**: Value/version reads may briefly observe a stale pairing during concurrent close
+ *
+ * This is a deliberate design choice: the library prioritizes lock-free performance,
+ * accepting that `close()` guarantees all resources are eventually released but does
+ * not provide an instantaneous synchronization barrier.
+ *
  * @param T the type of value held by the signal
  */
 interface Signal<out T> : AutoCloseable, ReadOnlyProperty<Any?, T> {

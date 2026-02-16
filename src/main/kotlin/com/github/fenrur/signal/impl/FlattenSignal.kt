@@ -73,6 +73,12 @@ class FlattenSignal<T>(
                 if (closed.get()) return@subscribe
                 result.onFailure { ex -> notifyAllError(listeners.toList(), ex) }
             })
+
+            // Race 4 post-check: if close() ran during registration, undo
+            if (closed.get()) {
+                unregisterAsTarget(source)
+                unsubscribeOuter.getAndSet {}.invoke()
+            }
         }
     }
 
@@ -96,6 +102,11 @@ class FlattenSignal<T>(
             currentInner.get()?.let { unregisterAsTarget(it) }
             innerUnsubscribe.getAndSet {}.invoke()
             unsubscribeOuter.getAndSet {}.invoke()
+
+            // Race 5 post-check: if listeners/targets were added during cleanup, re-subscribe
+            if ((listeners.isNotEmpty() || targets.isNotEmpty()) && !closed.get()) {
+                ensureSubscribed()
+            }
         }
     }
 

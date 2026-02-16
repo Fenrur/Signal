@@ -34,8 +34,8 @@ class DistinctBySignal<T, K>(
     override fun computeValue(): T {
         val current = source.value
         val currentKey = keySelector(current)
-        return if (currentKey != lastKey.get()) {
-            lastKey.set(currentKey)
+        val prevKey = lastKey.getAndSet(currentKey)
+        return if (currentKey != prevKey) {
             current
         } else {
             cachedValue.get()

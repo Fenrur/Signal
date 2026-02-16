@@ -32,10 +32,8 @@ class PairwiseSignal<T>(
 
     override fun computeValue(): Pair<T, T> {
         val current = source.value
-        val previous = previousValue.get()
-        val pair = previous to current
-        previousValue.set(current)
-        return pair
+        val previous = previousValue.getAndSet(current)
+        return previous to current
     }
 
     override fun hasSourcesChanged(): Boolean = getVersion(source) != lastSourceVersion.get()
