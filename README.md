@@ -1,6 +1,6 @@
 # Signal
 
-[![](https://jitpack.io/v/fenrur/signal.svg)](https://jitpack.io/#fenrur/signal)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.fenrur/signal)](https://central.sonatype.com/artifact/io.github.fenrur/signal)
 
 A reactive state management library for Kotlin, inspired by SolidJS signals and Kotlin StateFlow.
 
@@ -10,13 +10,8 @@ A reactive state management library for Kotlin, inspired by SolidJS signals and 
 
 ```kotlin
 // build.gradle.kts
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-}
-
 dependencies {
-    implementation("com.github.fenrur:signal:2.0.1")
+    implementation("io.github.fenrur:signal:3.0.0")
 }
 ```
 
@@ -24,30 +19,18 @@ dependencies {
 
 ```groovy
 // build.gradle
-repositories {
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-}
-
 dependencies {
-    implementation 'com.github.fenrur:signal:2.0.1'
+    implementation 'io.github.fenrur:signal:3.0.0'
 }
 ```
 
 ### Maven
 
 ```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-
 <dependency>
-    <groupId>com.github.fenrur</groupId>
+    <groupId>io.github.fenrur</groupId>
     <artifactId>signal</artifactId>
-    <version>2.0.1</version>
+    <version>3.0.0</version>
 </dependency>
 ```
 
@@ -58,7 +41,7 @@ dependencies {
 A `Signal<T>` is a read-only reactive container that holds a value and notifies subscribers when it changes.
 
 ```kotlin
-import com.github.fenrur.signal.*
+import io.github.fenrur.signal.*
 
 val count: Signal<Int> = signalOf(0)
 
@@ -305,7 +288,7 @@ The `wouldCreateCycle` function traverses the binding chain to detect:
 
 Import operators:
 ```kotlin
-import com.github.fenrur.signal.operators.*
+import io.github.fenrur.signal.operators.*
 ```
 
 ### Transformation
@@ -579,7 +562,7 @@ implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 ```
 
 ```kotlin
-import com.github.fenrur.signal.*
+import io.github.fenrur.signal.*
 
 // Convert Signal to Flow
 val signal = mutableSignalOf(0)
@@ -613,7 +596,7 @@ implementation("org.reactivestreams:reactive-streams:1.0.4")
 ```
 
 ```kotlin
-import com.github.fenrur.signal.*
+import io.github.fenrur.signal.*
 
 // Convert Signal to Reactive Streams Publisher
 val signal = mutableSignalOf("hello")
@@ -628,7 +611,7 @@ val signal: Signal<Int> = somePublisher.asSignal(initial = 0)
 Convert Java's `java.util.concurrent.Flow.Publisher` to Signal:
 
 ```kotlin
-import com.github.fenrur.signal.*
+import io.github.fenrur.signal.*
 
 // Convert JDK Flow.Publisher to Signal
 val signal = jdkPublisher.asJdkPublisher()
@@ -642,8 +625,8 @@ val signal = jdkPublisher.asJdkPublisher(initial = 0)
 When updating multiple signals, each update normally triggers immediate notifications to subscribers. The `batch { }` function groups multiple signal mutations together, deferring all notifications until the batch completes. This prevents intermediate states and reduces unnecessary recomputations.
 
 ```kotlin
-import com.github.fenrur.signal.*
-import com.github.fenrur.signal.operators.*
+import io.github.fenrur.signal.*
+import io.github.fenrur.signal.operators.*
 
 val firstName = mutableSignalOf("John")
 val lastName = mutableSignalOf("Doe")

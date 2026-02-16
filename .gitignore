@@ -20,3 +20,4 @@ Thumbs.db
 
 # Kotlin
 *.class
+.kotlin/

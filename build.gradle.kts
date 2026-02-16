@@ -1,11 +1,11 @@
 plugins {
     kotlin("multiplatform") version "2.1.20"
     id("org.jetbrains.dokka") version "2.1.0"
-    `maven-publish`
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
-group = "com.github.fenrur"
-version = System.getenv("VERSION") ?: "2.0.1"
+group = "io.github.fenrur"
+version = System.getenv("VERSION") ?: "3.0.0"
 
 repositories {
     mavenCentral()
@@ -116,32 +116,38 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-publishing {
-    publications.withType<MavenPublication> {
-        pom {
-            name.set("Signal")
-            description.set("A reactive signal library for Kotlin Multiplatform")
+mavenPublishing {
+    publishToMavenCentral()
+
+    if (System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null) {
+        signAllPublications()
+    }
+    coordinates("io.github.fenrur", "signal", version.toString())
+
+    pom {
+        name.set("Signal")
+        description.set("A reactive signal library for Kotlin Multiplatform")
+        url.set("https://github.com/fenrur/signal")
+        inceptionYear.set("2025")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("fenrur")
+                name.set("Livio TINNIRELLO")
+            }
+        }
+
+        scm {
             url.set("https://github.com/fenrur/signal")
-
-            licenses {
-                license {
-                    name.set("MIT License")
-                    url.set("https://opensource.org/licenses/MIT")
-                }
-            }
-
-            developers {
-                developer {
-                    id.set("fenrur")
-                    name.set("Livio TINNIRELLO")
-                }
-            }
-
-            scm {
-                url.set("https://github.com/fenrur/signal")
-                connection.set("scm:git:git://github.com/fenrur/signal.git")
-                developerConnection.set("scm:git:ssh://github.com/fenrur/signal.git")
-            }
+            connection.set("scm:git:git://github.com/fenrur/signal.git")
+            developerConnection.set("scm:git:ssh://github.com/fenrur/signal.git")
         }
     }
 }
