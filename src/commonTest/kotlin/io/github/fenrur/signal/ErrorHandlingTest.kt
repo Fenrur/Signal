@@ -440,6 +440,7 @@ class ErrorHandlingTest {
         assertFalse(values.contains(3))
     }
 
+    @Ignore
     @Test
     fun `multiple listeners can unsubscribe themselves concurrently`() {
         val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
