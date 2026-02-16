@@ -75,6 +75,10 @@ class FlowSignal<T>(
             publisher.subscribe(object : Flow.Subscriber<T> {
                 override fun onSubscribe(s: Flow.Subscription) {
                     subscription.set(s)
+                    // Race 4 post-check: close() may have been called between the
+                    // compareAndSet in ensureSubscribed() and this callback. The check
+                    // must be here (not at the end of ensureSubscribed) because the
+                    // subscription object is only available inside this callback.
                     if (closed.get()) {
                         subscription.getAndSet(null)?.cancel()
                         return

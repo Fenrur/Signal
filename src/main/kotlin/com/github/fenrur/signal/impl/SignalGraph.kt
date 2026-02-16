@@ -180,6 +180,10 @@ object SignalGraph {
         } finally {
             isFlushing.set(false)
         }
+        // Re-vérification : des effets ont pu être ajoutés entre le dernier poll() et set(false)
+        if (pendingEffects.isNotEmpty()) {
+            flushEffects()
+        }
     }
 
     /**

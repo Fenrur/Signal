@@ -10,6 +10,11 @@ import java.util.concurrent.atomic.AtomicReference
  * Similar to Kotlin's `scan` or `runningFold`. Each emission includes
  * the accumulated result of applying the accumulator to all previous values.
  *
+ * **Concurrency caveat:** Under concurrent access, if two threads read `.value` on a DIRTY signal
+ * simultaneously, one accumulation step may apply against a stale base value. This is inherent
+ * to the lock-free design and does not constitute a bug — callers requiring strict serialisation
+ * of accumulation steps should synchronise externally.
+ *
  * @param T the type of source values
  * @param R the type of accumulated values
  * @param source the source signal

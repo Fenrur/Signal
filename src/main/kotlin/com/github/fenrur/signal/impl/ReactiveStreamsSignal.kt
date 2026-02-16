@@ -78,6 +78,10 @@ class ReactiveStreamsSignal<T>(
             publisher.subscribe(object : Subscriber<T> {
                 override fun onSubscribe(s: Subscription) {
                     subscription.set(s)
+                    // Race 4 post-check: close() may have been called between the
+                    // compareAndSet in ensureSubscribed() and this callback. The check
+                    // must be here (not at the end of ensureSubscribed) because the
+                    // subscription object is only available inside this callback.
                     if (closed.get()) {
                         subscription.getAndSet(null)?.cancel()
                         return
