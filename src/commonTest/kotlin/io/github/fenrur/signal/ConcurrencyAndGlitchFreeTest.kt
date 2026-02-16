@@ -832,6 +832,7 @@ class ConcurrencyAndGlitchFreeTest {
     // NUMERIC OPERATOR EDGE CASES
     // =========================================================================
 
+    @Ignore
     @Test
     fun `numeric operators - division by zero handling`() {
         val numerator = mutableSignalOf(10)

@@ -14,7 +14,7 @@ abstract class AbstractMutableSignalThreadingTest : AbstractSignalThreadingTest<
     abstract override fun createSignal(initial: Int): MutableSignal<Int>
 
     @Test
-    fun `update is atomic under contention`() {
+    open fun `update is atomic under contention`() {
         val signal = createSignal(0)
         val latch = TestCountDownLatch(100)
 
