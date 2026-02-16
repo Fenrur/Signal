@@ -47,7 +47,7 @@ class DefaultBindableSignal<T>(
 
     // Glitch-free infrastructure
     private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
-    private val flag = AtomicReference(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+    private val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
     private val cachedValue = AtomicReference<T?>(null)
@@ -65,7 +65,7 @@ class DefaultBindableSignal<T>(
                     val currentValue = validateAndGetTyped()
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        _root_ide_package_.io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
                     }
                 }
             }
@@ -84,7 +84,7 @@ class DefaultBindableSignal<T>(
             signal.validateAndGet()
             signal.version
         }
-        else -> _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+        else -> io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
     }
 
     private fun registerAsTarget(signal: io.github.fenrur.signal.Signal<*>) {
@@ -134,24 +134,24 @@ class DefaultBindableSignal<T>(
             ?: throw IllegalStateException("BindableSignal is not bound")
 
         when (flag.load()) {
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
                 val sourceVersion = getSourceVersion(data.signal)
                 if (sourceVersion == lastSourceVersion.load()) {
                     @Suppress("UNCHECKED_CAST")
                     return cachedValue.load() as T
                 }
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
                 val sourceVersion = getSourceVersion(data.signal)
                 if (sourceVersion != lastSourceVersion.load()) {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
                 } else {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
                     @Suppress("UNCHECKED_CAST")
                     return cachedValue.load() as T
                 }
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
         }
 
         // Recompute
@@ -165,7 +165,7 @@ class DefaultBindableSignal<T>(
             _version.incrementAndFetch()
         }
 
-        flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
         return newValue
     }
 
@@ -178,17 +178,17 @@ class DefaultBindableSignal<T>(
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY) == _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
-        if (flag.compareAndSet(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN, _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
@@ -241,14 +241,14 @@ class DefaultBindableSignal<T>(
         if (isClosed) return
 
         // Phase 1: Pre-check for cycles (fast path rejection)
-        if (_root_ide_package_.io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
+        if (io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
             throw IllegalStateException("Circular binding detected: binding would create a cycle")
         }
 
         // Subscribe for error propagation
         val unSub = newSignal.subscribe { result ->
             if (isClosed) return@subscribe
-            result.onFailure { ex -> _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
+            result.onFailure { ex -> io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
         }
 
         // Phase 2: Atomic bind
@@ -256,7 +256,7 @@ class DefaultBindableSignal<T>(
 
         // Phase 3: Post-check for cycles (detect concurrent binding race)
         // Another thread might have bound in a way that now creates a cycle
-        if (_root_ide_package_.io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
+        if (io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
             // Phase 4: Rollback - restore old binding
             bindingData.store(oldData)
             try {
@@ -289,21 +289,21 @@ class DefaultBindableSignal<T>(
         }
 
         // Mark dirty and trigger update
-        flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+        flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
         _version.incrementAndFetch()
-        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+        io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
         if (notifyListeners) {
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+            io.github.fenrur.signal.impl.SignalGraph.startBatch()
             try {
                 for (target in targets) {
                     target.markDirty()
                 }
                 if (listeners.isNotEmpty()) {
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                    io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
                 }
             } finally {
-                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                io.github.fenrur.signal.impl.SignalGraph.endBatch()
             }
         }
     }

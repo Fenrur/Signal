@@ -7,7 +7,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal returns transformed initial value`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
 
         assertEquals(20, mapped.value)
@@ -15,7 +15,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal throws if initial value transforms to null`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(3)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
 
         assertFailsWith<IllegalStateException> {
             source.mapNotNull { if (it > 5) it * 2 else null }
@@ -24,7 +24,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal retains last non-null value when transform returns null`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         assertEquals(20, mapped.value)
@@ -36,7 +36,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal updates when transform returns non-null`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         source.value = 15
@@ -46,7 +46,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal notifies only for non-null values`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
         val values = mutableListOf<Int>()
 
@@ -62,7 +62,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal with type transformation`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("42")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("42")
         val mapped = source.mapNotNull { it.toIntOrNull() }
 
         assertEquals(42, mapped.value)
@@ -76,7 +76,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal closes properly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
 
         assertFalse(mapped.isClosed)
@@ -88,7 +88,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull signal stops receiving after close`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
         val values = mutableListOf<Int>()
 
@@ -103,7 +103,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
         val values = mutableListOf<Int>()
 
@@ -119,7 +119,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
         mapped.close()
 
@@ -132,7 +132,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `multiple subscribers receive same notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
@@ -150,7 +150,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `mapNotNull with nullable source type`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(10)
         val mapped = source.mapNotNull { it?.let { v -> v * 2 } }
 
         assertEquals(20, mapped.value)
@@ -164,7 +164,7 @@ class MapNotNullSignalTest {
 
     @Test
     fun `toString shows value and state`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.mapNotNull { it * 2 }
 
         assertTrue(mapped.toString().contains("20"))

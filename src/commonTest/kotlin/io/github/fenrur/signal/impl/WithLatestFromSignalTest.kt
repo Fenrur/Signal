@@ -7,8 +7,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal returns combined initial value`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertEquals(110, combined.value)
@@ -16,8 +16,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal emits when source changes`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -31,8 +31,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal does not emit when only other changes`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -46,8 +46,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal samples latest from other on source change`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -62,8 +62,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal value reflects current state`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertEquals(110, combined.value)
@@ -77,8 +77,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal with pair combiner`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
         val combined = source.withLatestFrom(other) { a, b -> a to b }
 
         assertEquals(10 to "hello", combined.value)
@@ -93,8 +93,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal multiple source changes`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val combined = source.withLatestFrom(other) { a, b -> a * b }
         val values = mutableListOf<Int>()
 
@@ -109,8 +109,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal closes properly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertFalse(combined.isClosed)
@@ -122,8 +122,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom signal stops receiving after close`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -138,8 +138,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -155,8 +155,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         combined.close()
 
@@ -169,8 +169,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `multiple subscribers receive same notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
@@ -188,8 +188,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `withLatestFrom with different types`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(listOf("a", "b", "c"))
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf("a", "b", "c"))
         val combined = source.withLatestFrom(other) { index, list ->
             list.getOrNull(index) ?: "N/A"
         }
@@ -208,8 +208,8 @@ class WithLatestFromSignalTest {
 
     @Test
     fun `toString shows value and state`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertTrue(combined.toString().contains("110"))

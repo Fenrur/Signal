@@ -48,10 +48,10 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
             if (old != new) {
                 // Increment versions
                 _version.incrementAndFetch()
-                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
                 // Start batch to collect all effects
-                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                io.github.fenrur.signal.impl.SignalGraph.startBatch()
                 try {
                     // PUSH phase: mark all targets as dirty
                     for (target in targets) {
@@ -63,7 +63,7 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                         scheduleListenerNotification(new)
                     }
                 } finally {
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                    io.github.fenrur.signal.impl.SignalGraph.endBatch()
                 }
             }
         }
@@ -78,10 +78,10 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                 if (!isClosed) {
                     // Increment versions
                     _version.incrementAndFetch()
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                    io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
                     // Start batch to collect all effects
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                    io.github.fenrur.signal.impl.SignalGraph.startBatch()
                     try {
                         // PUSH phase: mark all targets as dirty
                         for (target in targets) {
@@ -93,7 +93,7 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                             scheduleListenerNotification(next)
                         }
                     } finally {
-                        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                        io.github.fenrur.signal.impl.SignalGraph.endBatch()
                     }
                 }
                 return
@@ -113,11 +113,11 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                 if (!isClosed) {
                     // Read current value at execution time for consistency
                     val currentValue = ref.load()
-                    _root_ide_package_.io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                    io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
                 }
             }
         }
-        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(effect)
+        io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(effect)
     }
 
     override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {

@@ -89,7 +89,7 @@ jobs:
         include:
           - os: ubuntu-latest
             task: linuxX64Test
-          - os: macos-13
+          - os: macos-latest
             task: macosX64Test
           - os: macos-latest
             task: macosArm64Test

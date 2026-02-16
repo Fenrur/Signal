@@ -44,9 +44,9 @@ class ConcurrencyAndGlitchFreeTest {
         //
         // b = a.map { it * 2 }
         // c = combine(a, b)
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         c.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -72,9 +72,9 @@ class ConcurrencyAndGlitchFreeTest {
         //
         // b = a * 2
         // c = a + b
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         // Verify consistency at each step
         assertEquals(3, c.value)  // a=1, b=2, c=3
@@ -97,10 +97,10 @@ class ConcurrencyAndGlitchFreeTest {
         // b = a * 2
         // c = a * 3
         // d = a + b + c
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
         val c = a.map { it * 3 }
-        val d = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
+        val d = io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
 
         val emissions = mutableListOf<Int>()
         d.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -132,13 +132,13 @@ class ConcurrencyAndGlitchFreeTest {
         // d = b + c
         // e = d * 2, f = d * 3
         // g = e + f
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
         val c = a.map { it * 3 }
-        val d = _root_ide_package_.io.github.fenrur.signal.operators.combine(b, c) { x, y -> x + y }
+        val d = io.github.fenrur.signal.operators.combine(b, c) { x, y -> x + y }
         val e = d.map { it * 2 }
         val f = d.map { it * 3 }
-        val g = _root_ide_package_.io.github.fenrur.signal.operators.combine(e, f) { x, y -> x + y }
+        val g = io.github.fenrur.signal.operators.combine(e, f) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         g.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -170,12 +170,12 @@ class ConcurrencyAndGlitchFreeTest {
         // b = a + 1, c = a + 2, d = a + 3
         // e = b + c + d
         // f = e + d
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it + 1 }
         val c = a.map { it + 2 }
         val d = a.map { it + 3 }
-        val e = _root_ide_package_.io.github.fenrur.signal.operators.combine(b, c, d) { x, y, z -> x + y + z }
-        val f = _root_ide_package_.io.github.fenrur.signal.operators.combine(e, d) { x, y -> x + y }
+        val e = io.github.fenrur.signal.operators.combine(b, c, d) { x, y, z -> x + y + z }
+        val f = io.github.fenrur.signal.operators.combine(e, d) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         f.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -203,9 +203,9 @@ class ConcurrencyAndGlitchFreeTest {
         //      c
         //
         // c = a + b
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         c.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -215,7 +215,7 @@ class ConcurrencyAndGlitchFreeTest {
         emissions.clear()
 
         // Batch update
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = 2
             b.value = 20
         }
@@ -233,17 +233,17 @@ class ConcurrencyAndGlitchFreeTest {
         //      c
         //
         // c = a + b
-        val a = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(0)
-        val b = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(0)
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = io.github.fenrur.signal.mutableSignalOf(0)
+        val b = io.github.fenrur.signal.mutableSignalOf(0)
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         c.subscribe { it.onSuccess { v -> emissions.add(v) } }
         emissions.clear()
 
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = 1
-            _root_ide_package_.io.github.fenrur.signal.batch {
+            io.github.fenrur.signal.batch {
                 b.value = 2
                 a.value = 3
             }
@@ -263,10 +263,10 @@ class ConcurrencyAndGlitchFreeTest {
         //       d
         //
         // d = a + b + c
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val c = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
-        val d = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val d = io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
 
         val emissions = mutableListOf<Int>()
         d.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -276,9 +276,9 @@ class ConcurrencyAndGlitchFreeTest {
         emissions.clear()
 
         // Nested batch update
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = 2
-            _root_ide_package_.io.github.fenrur.signal.batch {
+            io.github.fenrur.signal.batch {
                 b.value = 20
             }
             c.value = 200
@@ -297,13 +297,13 @@ class ConcurrencyAndGlitchFreeTest {
         //      c
         //
         // c = a + b
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         var valueReadDuringBatch: Int? = null
 
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = 2
             valueReadDuringBatch = c.value
             b.value = 20
@@ -328,7 +328,7 @@ class ConcurrencyAndGlitchFreeTest {
         //     |
         //   filtered (filter > 15)
         //
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
+        val source = io.github.fenrur.signal.mutableSignalOf(10)
         val doubled = source.map { it * 2 }
         val filtered = doubled.filter { it > 15 }
 
@@ -357,10 +357,10 @@ class ConcurrencyAndGlitchFreeTest {
         // b = a * 2
         // filtered = a (if > 0 else 1)
         // c = filtered + b
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
         val b = a.map { it * 2 }
         val filtered = a.map { if (it > 0) it else 1 }
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(filtered, b) { x, y -> x + y }
+        val c = io.github.fenrur.signal.operators.combine(filtered, b) { x, y -> x + y }
 
         val emissions = mutableListOf<Int>()
         c.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -382,7 +382,7 @@ class ConcurrencyAndGlitchFreeTest {
         //     |
         //    sum (scan + accumulate)
         //
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(1)
+        val source = io.github.fenrur.signal.mutableSignalOf(1)
         val sum = source.scan(0) { acc, v -> acc + v }
 
         val emissions = mutableListOf<Int>()
@@ -392,7 +392,7 @@ class ConcurrencyAndGlitchFreeTest {
         emissions.clear()
 
         // In a batch, only the final source value is seen
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             source.value = 2
             source.value = 3
             source.value = 4
@@ -411,8 +411,8 @@ class ConcurrencyAndGlitchFreeTest {
         //           |
         //        result (withLatestFrom)
         //
-        val trigger = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(0)
-        val sampled = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf("A")
+        val trigger = io.github.fenrur.signal.mutableSignalOf(0)
+        val sampled = io.github.fenrur.signal.mutableSignalOf("A")
         val result = trigger.withLatestFrom(sampled) { t, s -> "$t:$s" }
 
         val emissions = mutableListOf<String>()
@@ -428,7 +428,7 @@ class ConcurrencyAndGlitchFreeTest {
         assertEquals(listOf("1:B"), emissions.toList())
 
         // Batch update both
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             sampled.value = "C"
             trigger.value = 2
         }
@@ -441,7 +441,7 @@ class ConcurrencyAndGlitchFreeTest {
         //     |
         //   pairs (pairwise)
         //
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(1)
+        val source = io.github.fenrur.signal.mutableSignalOf(1)
         val pairs = source.pairwise()
 
         val emissions = mutableListOf<Pair<Int, Int>>()
@@ -449,7 +449,7 @@ class ConcurrencyAndGlitchFreeTest {
         emissions.clear()
 
         // In a batch, only the final value is seen
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             source.value = 2
             source.value = 3
         }
@@ -472,9 +472,9 @@ class ConcurrencyAndGlitchFreeTest {
         //
         // b = a * 2
         // c = a + b
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
-        val c = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
 
         // Track all observed states
         val observedStates = mutableListOf<Triple<Int, Int, Int>>()
@@ -504,7 +504,7 @@ class ConcurrencyAndGlitchFreeTest {
         //   |
         //   b (map * 10)
         //
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 10 }
 
         assertEquals(10, b.value)
@@ -524,11 +524,11 @@ class ConcurrencyAndGlitchFreeTest {
         //      \|/
         //    combined
         //
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val c = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
 
-        val combined = _root_ide_package_.io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
+        val combined = io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
 
         val emissions = mutableListOf<Int>()
         combined.subscribe { result -> result.onSuccess { emissions.add(it) } }
@@ -555,7 +555,7 @@ class ConcurrencyAndGlitchFreeTest {
         //   |
         //   b (map * 2)
         //
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
 
         val emissions = mutableListOf<Int>()
@@ -579,7 +579,7 @@ class ConcurrencyAndGlitchFreeTest {
         //   b (map with counter)
         //
         var computeCount = 0
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map {
             computeCount++
             it * 2
@@ -611,7 +611,7 @@ class ConcurrencyAndGlitchFreeTest {
         //   mapped (lazy - no push until subscribed)
         //
         var computeCount = 0
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(1)
+        val source = io.github.fenrur.signal.mutableSignalOf(1)
         val mapped = source.map {
             computeCount++
             it * 2
@@ -665,7 +665,7 @@ class ConcurrencyAndGlitchFreeTest {
         //     |
         //   level3 (map * 3)
         //
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(1)
+        val source = io.github.fenrur.signal.mutableSignalOf(1)
         val level1 = source.map { it * 2 }
         val level2 = level1.map { it + 10 }
         val level3 = level2.map { it * 3 }
@@ -707,8 +707,8 @@ class ConcurrencyAndGlitchFreeTest {
         //   |/ \| |
         //  and or xor  notA
         //
-        val a = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(true)
-        val b = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(false)
+        val a = io.github.fenrur.signal.mutableSignalOf(true)
+        val b = io.github.fenrur.signal.mutableSignalOf(false)
 
         val and = a.and(b)
         val or = a.or(b)
@@ -728,7 +728,7 @@ class ConcurrencyAndGlitchFreeTest {
         assertFalse(notA.value)
 
         // Update in batch
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = false
             b.value = true
         }
@@ -739,7 +739,7 @@ class ConcurrencyAndGlitchFreeTest {
         assertTrue(notA.value)
 
         // Both true
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = true
             b.value = true
         }
@@ -757,8 +757,8 @@ class ConcurrencyAndGlitchFreeTest {
         //   |/ \/ \|
         //  sum diff prod quot rem
         //
-        val a = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
-        val b = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(3)
+        val a = io.github.fenrur.signal.mutableSignalOf(10)
+        val b = io.github.fenrur.signal.mutableSignalOf(3)
 
         val sum = a + b
         val diff = a - b
@@ -781,7 +781,7 @@ class ConcurrencyAndGlitchFreeTest {
         assertEquals(1, rem.value)
 
         // Update in batch
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             a.value = 20
             b.value = 4
         }
@@ -799,7 +799,7 @@ class ConcurrencyAndGlitchFreeTest {
 
     @Test
     fun `scan - identity function preserves values`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(5)
+        val source = io.github.fenrur.signal.mutableSignalOf(5)
         val scanned = source.scan(0) { acc, value -> acc + value }
 
         assertEquals(5, scanned.value) // 0 + 5
@@ -813,7 +813,7 @@ class ConcurrencyAndGlitchFreeTest {
 
     @Test
     fun `scan - initial equals first source value`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
+        val source = io.github.fenrur.signal.mutableSignalOf(10)
         val scanned = source.scan(10) { acc, value -> acc + value }
 
         // Initial: 10 + 10 = 20
@@ -834,19 +834,16 @@ class ConcurrencyAndGlitchFreeTest {
 
     @Test
     fun `numeric operators - division by zero handling`() {
-        val numerator = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
-        val denominator = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(2)
+        val numerator = io.github.fenrur.signal.mutableSignalOf(10)
+        val denominator = io.github.fenrur.signal.mutableSignalOf(2)
         val result = numerator / denominator
 
         assertEquals(5, result.value)
 
-        // Division by zero should throw ArithmeticException
+        // Division by zero should throw (ArithmeticException on JVM, RuntimeError on Wasm)
         denominator.value = 0
-        try {
+        assertFails {
             result.value
-            throw AssertionError("Should have thrown ArithmeticException")
-        } catch (e: ArithmeticException) {
-            // Expected
         }
 
         // Recovery: set back to non-zero
@@ -860,7 +857,7 @@ class ConcurrencyAndGlitchFreeTest {
 
     @Test
     fun `bimap - forward transform exception is caught and propagated`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
+        val source = io.github.fenrur.signal.mutableSignalOf(10)
         val bimapped = source.bimap(
             forward = { if (it == 0) throw IllegalArgumentException("Zero not allowed") else it * 2 },
             reverse = { it / 2 }
@@ -893,7 +890,7 @@ class ConcurrencyAndGlitchFreeTest {
 
     @Test
     fun `bimap - reverse transform exception is caught and propagated`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(10)
+        val source = io.github.fenrur.signal.mutableSignalOf(10)
         val bimapped = source.bimap(
             forward = { it * 2 },
             reverse = { if (it == 0) throw IllegalArgumentException("Zero not allowed") else it / 2 }

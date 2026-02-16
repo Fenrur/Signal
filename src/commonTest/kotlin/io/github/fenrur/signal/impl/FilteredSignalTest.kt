@@ -7,24 +7,24 @@ import kotlin.test.*
 class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fenrur.signal.Signal<Int>>() {
 
     override fun createSignal(initial: Int): io.github.fenrur.signal.Signal<Int> {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
-        return _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 0 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+        return io.github.fenrur.signal.impl.FilteredSignal(source) { it > 0 }
     }
 
     // ==================== FilteredSignal-specific tests ====================
 
     @Test
     fun `filtered signal returns initial value when predicate matches`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
 
         assertEquals(10, filtered.value)
     }
 
     @Test
     fun `filtered signal retains last matching value when predicate fails`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
 
         source.value = 3
 
@@ -33,8 +33,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `filtered signal updates when new value matches predicate`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
 
         source.value = 20
 
@@ -43,8 +43,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `filtered signal notifies subscribers only for matching values`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
         val values = mutableListOf<Int>()
 
         filtered.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -59,8 +59,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `filtered signal does not notify for non-matching initial value changes`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
         var callCount = 0
 
         filtered.subscribe { callCount++ }
@@ -72,8 +72,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `filtered signal stops receiving after close`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
         val values = mutableListOf<Int>()
 
         filtered.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -87,8 +87,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
         val values = mutableListOf<Int>()
 
         val unsubscribe = filtered.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -103,8 +103,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `multiple subscribers receive notifications independently`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
 
@@ -121,8 +121,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `toString shows value and state`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it > 5 }
 
         assertTrue(filtered.toString().contains("10"))
         assertTrue(filtered.toString().contains("FilteredSignal"))
@@ -130,8 +130,8 @@ class FilteredSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.
 
     @Test
     fun `filtered signal with complex predicate`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
-        val filtered = _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(source) { it.length > 3 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { it.length > 3 }
 
         assertEquals("hello", filtered.value)
 

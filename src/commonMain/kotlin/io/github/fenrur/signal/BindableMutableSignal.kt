@@ -59,7 +59,7 @@ interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
          * @return true if binding would create a cycle, false otherwise
          */
         fun <T> wouldCreateCycle(source: BindableMutableSignal<T>, target: io.github.fenrur.signal.MutableSignal<T>): Boolean {
-            return _root_ide_package_.io.github.fenrur.signal.BindableSignal.wouldCreateCycle(source, target)
+            return io.github.fenrur.signal.BindableSignal.wouldCreateCycle(source, target)
         }
     }
 }

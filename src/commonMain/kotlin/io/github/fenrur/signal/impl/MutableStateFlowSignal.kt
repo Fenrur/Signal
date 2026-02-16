@@ -70,7 +70,7 @@ class MutableStateFlowSignal<T>(
         override fun execute() {
             pending.store(false)
             if (!closed.load() && listeners.isNotEmpty()) {
-                _root_ide_package_.io.github.fenrur.signal.impl.notifyAllValue(listeners, stateFlow.value)
+                io.github.fenrur.signal.impl.notifyAllValue(listeners, stateFlow.value)
             }
         }
     }
@@ -91,18 +91,18 @@ class MutableStateFlowSignal<T>(
                     if (old != newValue) {
                         // External update detected
                         _version.incrementAndFetch()
-                        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                        io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
-                        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                        io.github.fenrur.signal.impl.SignalGraph.startBatch()
                         try {
                             for (target in targets) {
                                 target.markDirty()
                             }
                             if (listeners.isNotEmpty()) {
-                                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                                io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
                             }
                         } finally {
-                            _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                            io.github.fenrur.signal.impl.SignalGraph.endBatch()
                         }
                     }
                 }
@@ -140,22 +140,22 @@ class MutableStateFlowSignal<T>(
                 if (stateFlow.compareAndSet(current, newValue)) {
                     lastNotifiedValue.store(newValue)
                     val newVersion = _version.incrementAndFetch()
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                    io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
                     // Mark the version we're updating to prevent collector from double-notifying.
                     // This is set AFTER incrementing version so the collector can check it.
                     selfUpdateVersion.store(newVersion)
                     try {
-                        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                        io.github.fenrur.signal.impl.SignalGraph.startBatch()
                         try {
                             for (target in targets) {
                                 target.markDirty()
                             }
                             if (listeners.isNotEmpty()) {
-                                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                                io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
                             }
                         } finally {
-                            _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                            io.github.fenrur.signal.impl.SignalGraph.endBatch()
                         }
                     } finally {
                         selfUpdateVersion.store(-1L)
@@ -177,21 +177,21 @@ class MutableStateFlowSignal<T>(
             if (stateFlow.compareAndSet(current, next)) {
                 lastNotifiedValue.store(next)
                 val newVersion = _version.incrementAndFetch()
-                _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
 
                 // Mark the version we're updating to prevent collector from double-notifying
                 selfUpdateVersion.store(newVersion)
                 try {
-                    _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                    io.github.fenrur.signal.impl.SignalGraph.startBatch()
                     try {
                         for (target in targets) {
                             target.markDirty()
                         }
                         if (listeners.isNotEmpty()) {
-                            _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                            io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
                         }
                     } finally {
-                        _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                        io.github.fenrur.signal.impl.SignalGraph.endBatch()
                     }
                 } finally {
                     selfUpdateVersion.store(-1L)

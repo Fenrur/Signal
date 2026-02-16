@@ -250,4 +250,4 @@ interface SourceSignalNode {
 /**
  * Top-level batch function for convenient access.
  */
-fun <T> batch(block: () -> T): T = _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.batch(block)
+fun <T> batch(block: () -> T): T = io.github.fenrur.signal.impl.SignalGraph.batch(block)

@@ -18,7 +18,7 @@ abstract class AbstractBindableSignalTest<S : io.github.fenrur.signal.Signal<Int
     protected abstract fun createSignal(source: io.github.fenrur.signal.Signal<Int>, takeOwnership: Boolean): S
 
     protected fun createMutableSource(initial: Int): io.github.fenrur.signal.impl.DefaultMutableSignal<Int> =
-        _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+        io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
 
     protected abstract fun bindTo(signal: S, source: io.github.fenrur.signal.Signal<Int>)
 
@@ -215,7 +215,7 @@ abstract class AbstractBindableSignalTest<S : io.github.fenrur.signal.Signal<Int
     @Test
     fun `wouldCreateCycle returns false when target is regular Signal`() {
         val a = createSignal(createMutableSource(1))
-        val b = _root_ide_package_.io.github.fenrur.signal.signalOf(2)
+        val b = io.github.fenrur.signal.signalOf(2)
 
         assertFalse(wouldCreateCycle(a, b))
     }

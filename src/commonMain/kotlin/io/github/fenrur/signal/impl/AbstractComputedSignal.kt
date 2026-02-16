@@ -48,7 +48,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
     protected val lastComputeError = AtomicReference<Throwable?>(null)
 
     // Glitch-free infrastructure
-    protected val flag = AtomicReference(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+    protected val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
     protected val _version = AtomicLong(1L)
     override val version: Long get() = _version.load()
     protected val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
@@ -91,11 +91,11 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
                     val currentValue = this@AbstractComputedSignal.value
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        _root_ide_package_.io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
                     }
                 } catch (e: Throwable) {
                     // Notify listeners of the computation error
-                    _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+                    io.github.fenrur.signal.impl.notifyAllError(listeners, e)
                 }
             }
         }
@@ -116,7 +116,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
                 source.subscribe { result ->
                     if (closed.load()) return@subscribe
                     result.onFailure { ex ->
-                        _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(
+                        io.github.fenrur.signal.impl.notifyAllError(
                             listeners,
                             ex
                         )
@@ -161,7 +161,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             signal.validateAndGet()
             signal.version
         }
-        else -> _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+        else -> io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
     }
 
     protected open fun validateAndGetTyped(): R {
@@ -176,20 +176,20 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
         }
 
         when (flag.load()) {
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
                 if (!hasSourcesChanged()) {
                     return cachedValue.load()
                 }
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
                 if (hasSourcesChanged()) {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
                 } else {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
                     return cachedValue.load()
                 }
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
         }
 
         // Recompute with exception handling
@@ -200,7 +200,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             lastComputeError.store(e)
             // Update source versions so we don't keep retrying with same input
             updateSourceVersions()
-            flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+            flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
             // Rethrow - listeners are notified through the effect mechanism
             throw e
         }
@@ -213,7 +213,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             _version.incrementAndFetch()
         }
 
-        flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
         return newValue
     }
 
@@ -224,18 +224,18 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY) == _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
         // This prevents redundant propagation if multiple threads call concurrently
-        if (flag.compareAndSet(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN, _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 

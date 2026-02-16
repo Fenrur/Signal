@@ -7,24 +7,24 @@ import kotlin.test.*
 class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fenrur.signal.Signal<Int>>() {
 
     override fun createSignal(initial: Int): io.github.fenrur.signal.Signal<Int> {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
-        return _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+        return io.github.fenrur.signal.impl.MappedSignal(source) { it }
     }
 
     // ==================== MappedSignal-specific tests ====================
 
     @Test
     fun `mapped signal transforms value`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
 
         assertEquals(20, mapped.value)
     }
 
     @Test
     fun `mapped signal updates when source changes`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
 
         source.value = 20
 
@@ -33,8 +33,8 @@ class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fe
 
     @Test
     fun `mapped signal notifies subscribers`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
         val values = mutableListOf<Int>()
 
         mapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -47,8 +47,8 @@ class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fe
 
     @Test
     fun `mapped signal does not notify if transformed value is same`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it / 10 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it / 10 }
         var callCount = 0
 
         mapped.subscribe { callCount++ }
@@ -60,9 +60,9 @@ class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fe
 
     @Test
     fun `mapped signal can chain transformations`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val doubled = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
-        val stringified = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(doubled) { "Value: $it" }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val doubled = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val stringified = io.github.fenrur.signal.impl.MappedSignal(doubled) { "Value: $it" }
 
         assertEquals("Value: 20", stringified.value)
 
@@ -72,8 +72,8 @@ class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fe
 
     @Test
     fun `mapped signal stops receiving after close`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
         val values = mutableListOf<Int>()
 
         mapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -87,9 +87,9 @@ class MappedSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fe
 
     @Test
     fun `mapped signal can transform to different type`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
         val mapped: io.github.fenrur.signal.Signal<String> =
-            _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { "Number: $it" }
+            io.github.fenrur.signal.impl.MappedSignal(source) { "Number: $it" }
 
         assertEquals("Number: 42", mapped.value)
     }

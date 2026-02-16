@@ -22,7 +22,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val values = mutableListOf<Int>()
 
         val unsubscribe = source.subscribe { result ->
@@ -43,7 +43,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `multiple unsubscribe calls are safe`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val unsubscribe = source.subscribe { }
 
         // Multiple calls should not throw
@@ -54,7 +54,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `unsubscribe during notification is safe`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val values = mutableListOf<Int>()
         lateinit var unsub: io.github.fenrur.signal.UnSubscriber
 
@@ -91,7 +91,7 @@ class ResourceCleanupTest {
         }
 
         // Create mapped signal but don't subscribe
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
 
         // Reading value doesn't subscribe (just pulls)
         assertEquals(20, mapped.value)
@@ -107,8 +107,8 @@ class ResourceCleanupTest {
 
     @Test
     fun `computed signal unsubscribes when all listeners removed`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
         val values = mutableListOf<Int>()
 
         // First subscription
@@ -153,7 +153,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `close clears all listeners`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val values = mutableListOf<Int>()
 
         source.subscribe { result -> result.onSuccess { values.add(it) } }
@@ -174,8 +174,8 @@ class ResourceCleanupTest {
 
     @Test
     fun `close on computed signal unsubscribes from source`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val mapped = _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val mapped = io.github.fenrur.signal.impl.MappedSignal(source) { it * 2 }
         val values = mutableListOf<Int>()
 
         mapped.subscribe { result ->
@@ -194,7 +194,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `close is idempotent`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
 
         mapped.close()
@@ -209,7 +209,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `subscribe after close returns no-op unsubscriber`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         source.close()
 
         val values = mutableListOf<Int>()
@@ -230,7 +230,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `closing intermediate signal breaks chain`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped1 = source.map { it * 2 }
         val mapped2 = mapped1.map { it + 1 }
         val values = mutableListOf<Int>()
@@ -258,10 +258,10 @@ class ResourceCleanupTest {
         //   b   c
         //    \ /
         //     d
-        val a = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         val b = a.map { it * 2 }
         val c = a.map { it * 3 }
-        val d = _root_ide_package_.io.github.fenrur.signal.operators.combine(b, c) { x, y -> x + y }
+        val d = io.github.fenrur.signal.operators.combine(b, c) { x, y -> x + y }
 
         val values = mutableListOf<Int>()
         d.subscribe { result -> result.onSuccess { values.add(it) } }
@@ -283,9 +283,9 @@ class ResourceCleanupTest {
 
     @Test
     fun `bindable signal cleanup on rebind`() {
-        val signal1 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val signal2 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val bindable = _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableSignal(signal1)
+        val signal1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val signal2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val bindable = io.github.fenrur.signal.impl.DefaultBindableSignal(signal1)
 
         val values = mutableListOf<Int>()
         bindable.subscribe { result ->
@@ -311,10 +311,10 @@ class ResourceCleanupTest {
 
     @Test
     fun `bindable signal with takeOwnership closes old signal on rebind`() {
-        val signal1 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val signal2 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val signal1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val signal2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
         val bindable =
-            _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableSignal(signal1, takeOwnership = true)
+            io.github.fenrur.signal.impl.DefaultBindableSignal(signal1, takeOwnership = true)
 
         bindable.subscribe { }
 
@@ -328,9 +328,9 @@ class ResourceCleanupTest {
 
     @Test
     fun `bindable signal with takeOwnership closes signal on close`() {
-        val signal = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val signal = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val bindable =
-            _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableSignal(signal, takeOwnership = true)
+            io.github.fenrur.signal.impl.DefaultBindableSignal(signal, takeOwnership = true)
 
         assertFalse(signal.isClosed)
 
@@ -345,13 +345,13 @@ class ResourceCleanupTest {
 
     @Test
     fun `flatten signal cleanup on inner signal switch`() {
-        val inner1 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
         val outer =
-            _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
+            io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
                 inner1
             )
-        val flattened = _root_ide_package_.io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
 
         val values = mutableListOf<Int>()
         flattened.subscribe { result ->
@@ -377,12 +377,12 @@ class ResourceCleanupTest {
 
     @Test
     fun `flatten signal cleanup on close`() {
-        val inner = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val outer =
-            _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
+            io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
                 inner
             )
-        val flattened = _root_ide_package_.io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
 
         val values = mutableListOf<Int>()
         flattened.subscribe { result ->
@@ -405,7 +405,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `re-subscribe after unsubscribe works correctly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
         val values = mutableListOf<Int>()
 
@@ -434,7 +434,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `rapid subscribe unsubscribe cycles are stable`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
         val mapped = source.map { it * 2 }
 
         repeat(1000) { i ->
@@ -454,7 +454,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `unsubscribe during batch is handled correctly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
         val values = mutableListOf<Int>()
         lateinit var unsub: io.github.fenrur.signal.UnSubscriber
 
@@ -465,7 +465,7 @@ class ResourceCleanupTest {
             }
         }
 
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             source.value = 1
             source.value = 2
             source.value = 3
@@ -478,7 +478,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `close during batch is handled correctly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
         val values = mutableListOf<Int>()
 
         source.subscribe { result ->
@@ -489,7 +489,7 @@ class ResourceCleanupTest {
             }
         }
 
-        _root_ide_package_.io.github.fenrur.signal.batch {
+        io.github.fenrur.signal.batch {
             source.value = 1
             source.value = 2
             source.value = 3
@@ -507,7 +507,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `signal reference pattern - verify unsubscribe allows potential cleanup`() {
-        val signal = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val signal = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
 
         // Create and immediately release a reference
         var ref: (() -> Unit)? = signal.subscribe { }
@@ -520,7 +520,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `chain reference pattern - verify close allows potential cleanup`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
         var chain: io.github.fenrur.signal.Signal<Int>? = source.map { it * 2 }.map { it + 1 }
 
         chain?.subscribe { }
@@ -532,7 +532,7 @@ class ResourceCleanupTest {
 
     @Test
     fun `deep chain pattern - verify cleanup after unsubscribe`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
 
         var chain: io.github.fenrur.signal.Signal<Int>? = source
         repeat(20) {

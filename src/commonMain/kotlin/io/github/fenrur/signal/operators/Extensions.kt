@@ -62,7 +62,7 @@ data class Tuple6<out A, out B, out C, out D, out E, out F>(
  * @return a new signal with transformed values
  */
 fun <S, R> io.github.fenrur.signal.Signal<S>.map(transform: (S) -> R): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.MappedSignal(this, transform)
+    io.github.fenrur.signal.impl.MappedSignal(this, transform)
 
 /**
  * Creates a bidirectionally-mapped [io.github.fenrur.signal.MutableSignal] with forward and reverse transforms.
@@ -87,7 +87,7 @@ fun <S, R> io.github.fenrur.signal.Signal<S>.map(transform: (S) -> R): io.github
  * @return a new MutableSignal with bidirectional transformation
  */
 fun <S, R> io.github.fenrur.signal.MutableSignal<S>.bimap(forward: (S) -> R, reverse: (R) -> S): io.github.fenrur.signal.MutableSignal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(this, forward, reverse)
+    io.github.fenrur.signal.impl.BimappedSignal(this, forward, reverse)
 
 /**
  * Maps this signal's values to their string representation.
@@ -105,7 +105,7 @@ fun <S> io.github.fenrur.signal.Signal<S>.mapToString(): io.github.fenrur.signal
  * @return signal of non-null transformed values
  */
 fun <S, R : Any> io.github.fenrur.signal.Signal<S>.mapNotNull(transform: (S) -> R?): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.MapNotNullSignal(this, transform)
+    io.github.fenrur.signal.impl.MapNotNullSignal(this, transform)
 
 /**
  * Accumulates values over time using an accumulator function.
@@ -118,7 +118,7 @@ fun <S, R : Any> io.github.fenrur.signal.Signal<S>.mapNotNull(transform: (S) -> 
  * @return signal of accumulated values
  */
 fun <T, R> io.github.fenrur.signal.Signal<T>.scan(initial: R, accumulator: (acc: R, value: T) -> R): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.ScanSignal(this, initial, accumulator)
+    io.github.fenrur.signal.impl.ScanSignal(this, initial, accumulator)
 
 /**
  * Accumulates values starting from the signal's current value.
@@ -127,7 +127,7 @@ fun <T, R> io.github.fenrur.signal.Signal<T>.scan(initial: R, accumulator: (acc:
  * @return signal of accumulated values
  */
 fun <T> io.github.fenrur.signal.Signal<T>.runningReduce(accumulator: (acc: T, value: T) -> T): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.ScanSignal(this, value, accumulator)
+    io.github.fenrur.signal.impl.ScanSignal(this, value, accumulator)
 
 /**
  * Emits pairs of consecutive values (previous, current).
@@ -137,7 +137,7 @@ fun <T> io.github.fenrur.signal.Signal<T>.runningReduce(accumulator: (acc: T, va
  * @return signal of consecutive value pairs
  */
 fun <T> io.github.fenrur.signal.Signal<T>.pairwise(): io.github.fenrur.signal.Signal<Pair<T, T>> =
-    _root_ide_package_.io.github.fenrur.signal.impl.PairwiseSignal(this)
+    io.github.fenrur.signal.impl.PairwiseSignal(this)
 
 /**
  * Flattens a nested Signal<Signal<T>> to Signal<T>.
@@ -148,7 +148,7 @@ fun <T> io.github.fenrur.signal.Signal<T>.pairwise(): io.github.fenrur.signal.Si
  * @return flattened signal
  */
 fun <T> io.github.fenrur.signal.Signal<io.github.fenrur.signal.Signal<T>>.flatten(): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.FlattenSignal(this)
+    io.github.fenrur.signal.impl.FlattenSignal(this)
 
 /**
  * Maps to an inner signal and flattens.
@@ -182,7 +182,7 @@ fun <S, R> io.github.fenrur.signal.Signal<S>.switchMap(transform: (S) -> io.gith
  * @return filtered signal
  */
 fun <T> io.github.fenrur.signal.Signal<T>.filter(predicate: (T) -> Boolean): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.FilteredSignal(this, predicate)
+    io.github.fenrur.signal.impl.FilteredSignal(this, predicate)
 
 /**
  * Filters out null values.
@@ -209,7 +209,7 @@ inline fun <reified R> io.github.fenrur.signal.Signal<*>.filterIsInstance(): io.
  * @return signal that only updates when key changes
  */
 fun <T, K> io.github.fenrur.signal.Signal<T>.distinctUntilChangedBy(keySelector: (T) -> K): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DistinctBySignal(this, keySelector)
+    io.github.fenrur.signal.impl.DistinctBySignal(this, keySelector)
 
 /**
  * Signals already implement distinctUntilChanged, so this is a no-op.
@@ -228,7 +228,7 @@ fun <A, B, R> combine(
     sb: io.github.fenrur.signal.Signal<B>,
     transform: (A, B) -> R
 ): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.CombinedSignal2(sa, sb, transform)
+    io.github.fenrur.signal.impl.CombinedSignal2(sa, sb, transform)
 
 /**
  * Combines three signals.
@@ -239,7 +239,7 @@ fun <A, B, C, R> combine(
     sc: io.github.fenrur.signal.Signal<C>,
     transform: (A, B, C) -> R
 ): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.CombinedSignal3(sa, sb, sc, transform)
+    io.github.fenrur.signal.impl.CombinedSignal3(sa, sb, sc, transform)
 
 /**
  * Combines four signals.
@@ -251,7 +251,7 @@ fun <A, B, C, D, R> combine(
     sd: io.github.fenrur.signal.Signal<D>,
     transform: (A, B, C, D) -> R
 ): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.CombinedSignal4(sa, sb, sc, sd, transform)
+    io.github.fenrur.signal.impl.CombinedSignal4(sa, sb, sc, sd, transform)
 
 /**
  * Combines five signals.
@@ -264,7 +264,7 @@ fun <A, B, C, D, E, R> combine(
     se: io.github.fenrur.signal.Signal<E>,
     transform: (A, B, C, D, E) -> R
 ): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.CombinedSignal5(sa, sb, sc, sd, se, transform)
+    io.github.fenrur.signal.impl.CombinedSignal5(sa, sb, sc, sd, se, transform)
 
 /**
  * Combines six signals.
@@ -278,7 +278,7 @@ fun <A, B, C, D, E, F, R> combine(
     sf: io.github.fenrur.signal.Signal<F>,
     transform: (A, B, C, D, E, F) -> R
 ): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.CombinedSignal6(sa, sb, sc, sd, se, sf, transform)
+    io.github.fenrur.signal.impl.CombinedSignal6(sa, sb, sc, sd, se, sf, transform)
 
 /**
  * Zips two signals into a Pair.
@@ -287,7 +287,7 @@ fun <A, B> zip(
     sa: io.github.fenrur.signal.Signal<A>,
     sb: io.github.fenrur.signal.Signal<B>
 ): io.github.fenrur.signal.Signal<Pair<A, B>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(sa, sb) { a, b -> a to b }
+    io.github.fenrur.signal.operators.combine(sa, sb) { a, b -> a to b }
 
 /**
  * Zips three signals into a Triple.
@@ -297,7 +297,7 @@ fun <A, B, C> zip(
     sb: io.github.fenrur.signal.Signal<B>,
     sc: io.github.fenrur.signal.Signal<C>
 ): io.github.fenrur.signal.Signal<Triple<A, B, C>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(sa, sb, sc) { a, b, c -> Triple(a, b, c) }
+    io.github.fenrur.signal.operators.combine(sa, sb, sc) { a, b, c -> Triple(a, b, c) }
 
 /**
  * Zips four signals into a Tuple4.
@@ -308,12 +308,12 @@ fun <A, B, C, D> zip(
     sc: io.github.fenrur.signal.Signal<C>,
     sd: io.github.fenrur.signal.Signal<D>
 ): io.github.fenrur.signal.Signal<io.github.fenrur.signal.operators.Tuple4<A, B, C, D>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(
+    io.github.fenrur.signal.operators.combine(
         sa,
         sb,
         sc,
         sd
-    ) { a, b, c, d -> _root_ide_package_.io.github.fenrur.signal.operators.Tuple4(a, b, c, d) }
+    ) { a, b, c, d -> io.github.fenrur.signal.operators.Tuple4(a, b, c, d) }
 
 /**
  * Zips five signals into a Tuple5.
@@ -325,13 +325,13 @@ fun <A, B, C, D, E> zip(
     sd: io.github.fenrur.signal.Signal<D>,
     se: io.github.fenrur.signal.Signal<E>
 ): io.github.fenrur.signal.Signal<io.github.fenrur.signal.operators.Tuple5<A, B, C, D, E>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(
+    io.github.fenrur.signal.operators.combine(
         sa,
         sb,
         sc,
         sd,
         se
-    ) { a, b, c, d, e -> _root_ide_package_.io.github.fenrur.signal.operators.Tuple5(a, b, c, d, e) }
+    ) { a, b, c, d, e -> io.github.fenrur.signal.operators.Tuple5(a, b, c, d, e) }
 
 /**
  * Zips six signals into a Tuple6.
@@ -344,14 +344,14 @@ fun <A, B, C, D, E, F> zip(
     se: io.github.fenrur.signal.Signal<E>,
     sf: io.github.fenrur.signal.Signal<F>
 ): io.github.fenrur.signal.Signal<io.github.fenrur.signal.operators.Tuple6<A, B, C, D, E, F>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(
+    io.github.fenrur.signal.operators.combine(
         sa,
         sb,
         sc,
         sd,
         se,
         sf
-    ) { a, b, c, d, e, f -> _root_ide_package_.io.github.fenrur.signal.operators.Tuple6(a, b, c, d, e, f) }
+    ) { a, b, c, d, e, f -> io.github.fenrur.signal.operators.Tuple6(a, b, c, d, e, f) }
 
 /**
  * Combines with latest value from another signal.
@@ -363,7 +363,7 @@ fun <A, B, C, D, E, F> zip(
  * @return combined signal
  */
 fun <A, B, R> io.github.fenrur.signal.Signal<A>.withLatestFrom(other: io.github.fenrur.signal.Signal<B>, combiner: (A, B) -> R): io.github.fenrur.signal.Signal<R> =
-    _root_ide_package_.io.github.fenrur.signal.impl.WithLatestFromSignal(this, other, combiner)
+    io.github.fenrur.signal.impl.WithLatestFromSignal(this, other, combiner)
 
 /**
  * Combines with latest value from another signal into a Pair.
@@ -375,9 +375,9 @@ fun <A, B> io.github.fenrur.signal.Signal<A>.withLatestFrom(other: io.github.fen
  * Combines multiple signals into a list signal.
  */
 fun <T> combineAll(vararg signals: io.github.fenrur.signal.Signal<T>): io.github.fenrur.signal.Signal<List<T>> {
-    if (signals.isEmpty()) return _root_ide_package_.io.github.fenrur.signal.impl.ConstantSignal(emptyList())
+    if (signals.isEmpty()) return io.github.fenrur.signal.impl.ConstantSignal(emptyList())
     return signals.drop(1).fold(signals[0].map { listOf(it) }) { acc, signal ->
-        _root_ide_package_.io.github.fenrur.signal.operators.combine(acc, signal) { list, value -> list + value }
+        io.github.fenrur.signal.operators.combine(acc, signal) { list, value -> list + value }
     }
 }
 
@@ -385,7 +385,7 @@ fun <T> combineAll(vararg signals: io.github.fenrur.signal.Signal<T>): io.github
  * Combines a list of signals into a signal of list.
  */
 fun <T> List<io.github.fenrur.signal.Signal<T>>.combineAll(): io.github.fenrur.signal.Signal<List<T>> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combineAll(*toTypedArray())
+    io.github.fenrur.signal.operators.combineAll(*toTypedArray())
 
 // =============================================================================
 // BOOLEAN OPERATORS
@@ -400,37 +400,37 @@ fun io.github.fenrur.signal.Signal<Boolean>.not(): io.github.fenrur.signal.Signa
  * Logical AND of two boolean signals.
  */
 fun io.github.fenrur.signal.Signal<Boolean>.and(other: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a && b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a && b }
 
 /**
  * Logical OR of two boolean signals.
  */
 fun io.github.fenrur.signal.Signal<Boolean>.or(other: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a || b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a || b }
 
 /**
  * Logical XOR of two boolean signals.
  */
 fun io.github.fenrur.signal.Signal<Boolean>.xor(other: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a xor b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a xor b }
 
 /**
  * Returns true if all signals are true.
  */
 fun allOf(vararg signals: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combineAll(*signals).map { it.all { v -> v } }
+    io.github.fenrur.signal.operators.combineAll(*signals).map { it.all { v -> v } }
 
 /**
  * Returns true if any signal is true.
  */
 fun anyOf(vararg signals: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combineAll(*signals).map { it.any { v -> v } }
+    io.github.fenrur.signal.operators.combineAll(*signals).map { it.any { v -> v } }
 
 /**
  * Returns true if no signal is true.
  */
 fun noneOf(vararg signals: io.github.fenrur.signal.Signal<Boolean>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combineAll(*signals).map { it.none { v -> v } }
+    io.github.fenrur.signal.operators.combineAll(*signals).map { it.none { v -> v } }
 
 // =============================================================================
 // NUMERIC OPERATORS
@@ -441,138 +441,138 @@ fun noneOf(vararg signals: io.github.fenrur.signal.Signal<Boolean>): io.github.f
  */
 @JvmName("plusInt")
 operator fun io.github.fenrur.signal.Signal<Int>.plus(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
 
 @JvmName("plusLong")
 operator fun io.github.fenrur.signal.Signal<Long>.plus(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
 
 @JvmName("plusDouble")
 operator fun io.github.fenrur.signal.Signal<Double>.plus(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
 
 @JvmName("plusFloat")
 operator fun io.github.fenrur.signal.Signal<Float>.plus(other: io.github.fenrur.signal.Signal<Float>): io.github.fenrur.signal.Signal<Float> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
 
 /**
  * Subtracts two numeric signals.
  */
 @JvmName("minusInt")
 operator fun io.github.fenrur.signal.Signal<Int>.minus(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
 
 @JvmName("minusLong")
 operator fun io.github.fenrur.signal.Signal<Long>.minus(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
 
 @JvmName("minusDouble")
 operator fun io.github.fenrur.signal.Signal<Double>.minus(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
 
 @JvmName("minusFloat")
 operator fun io.github.fenrur.signal.Signal<Float>.minus(other: io.github.fenrur.signal.Signal<Float>): io.github.fenrur.signal.Signal<Float> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a - b }
 
 /**
  * Multiplies two numeric signals.
  */
 @JvmName("timesInt")
 operator fun io.github.fenrur.signal.Signal<Int>.times(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
 
 @JvmName("timesLong")
 operator fun io.github.fenrur.signal.Signal<Long>.times(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
 
 @JvmName("timesDouble")
 operator fun io.github.fenrur.signal.Signal<Double>.times(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
 
 @JvmName("timesFloat")
 operator fun io.github.fenrur.signal.Signal<Float>.times(other: io.github.fenrur.signal.Signal<Float>): io.github.fenrur.signal.Signal<Float> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a * b }
 
 /**
  * Divides two numeric signals.
  */
 @JvmName("divInt")
 operator fun io.github.fenrur.signal.Signal<Int>.div(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
 
 @JvmName("divLong")
 operator fun io.github.fenrur.signal.Signal<Long>.div(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
 
 @JvmName("divDouble")
 operator fun io.github.fenrur.signal.Signal<Double>.div(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
 
 @JvmName("divFloat")
 operator fun io.github.fenrur.signal.Signal<Float>.div(other: io.github.fenrur.signal.Signal<Float>): io.github.fenrur.signal.Signal<Float> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a / b }
 
 /**
  * Remainder of two numeric signals.
  */
 @JvmName("remInt")
 operator fun io.github.fenrur.signal.Signal<Int>.rem(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a % b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a % b }
 
 @JvmName("remLong")
 operator fun io.github.fenrur.signal.Signal<Long>.rem(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a % b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a % b }
 
 /**
  * Coerces value to be within a range.
  */
 @JvmName("coerceInInt")
 fun io.github.fenrur.signal.Signal<Int>.coerceIn(min: io.github.fenrur.signal.Signal<Int>, max: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
+    io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
 
 @JvmName("coerceInLong")
 fun io.github.fenrur.signal.Signal<Long>.coerceIn(min: io.github.fenrur.signal.Signal<Long>, max: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
+    io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
 
 @JvmName("coerceInDouble")
 fun io.github.fenrur.signal.Signal<Double>.coerceIn(min: io.github.fenrur.signal.Signal<Double>, max: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
+    io.github.fenrur.signal.operators.combine(this, min, max) { v, lo, hi -> v.coerceIn(lo, hi) }
 
 /**
  * Coerces value to be at least a minimum.
  */
 @JvmName("coerceAtLeastInt")
 fun io.github.fenrur.signal.Signal<Int>.coerceAtLeast(min: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
+    io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
 
 @JvmName("coerceAtLeastInt2")
 fun io.github.fenrur.signal.Signal<Int>.coerceAtLeast(min: Int): io.github.fenrur.signal.Signal<Int> = map { it.coerceAtLeast(min) }
 
 @JvmName("coerceAtLeastLong")
 fun io.github.fenrur.signal.Signal<Long>.coerceAtLeast(min: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
+    io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
 
 @JvmName("coerceAtLeastDouble")
 fun io.github.fenrur.signal.Signal<Double>.coerceAtLeast(min: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
+    io.github.fenrur.signal.operators.combine(this, min) { v, lo -> v.coerceAtLeast(lo) }
 
 /**
  * Coerces value to be at most a maximum.
  */
 @JvmName("coerceAtMostInt")
 fun io.github.fenrur.signal.Signal<Int>.coerceAtMost(max: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Int> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
+    io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
 
 @JvmName("coerceAtMostInt2")
 fun io.github.fenrur.signal.Signal<Int>.coerceAtMost(max: Int): io.github.fenrur.signal.Signal<Int> = map { it.coerceAtMost(max) }
 
 @JvmName("coerceAtMostLong")
 fun io.github.fenrur.signal.Signal<Long>.coerceAtMost(max: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Long> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
+    io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
 
 @JvmName("coerceAtMostDouble")
 fun io.github.fenrur.signal.Signal<Double>.coerceAtMost(max: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Double> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
+    io.github.fenrur.signal.operators.combine(this, max) { v, hi -> v.coerceAtMost(hi) }
 
 // =============================================================================
 // COMPARISON OPERATORS
@@ -583,42 +583,42 @@ fun io.github.fenrur.signal.Signal<Double>.coerceAtMost(max: io.github.fenrur.si
  */
 @JvmName("gtInt")
 infix fun io.github.fenrur.signal.Signal<Int>.gt(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
 
 @JvmName("gtLong")
 infix fun io.github.fenrur.signal.Signal<Long>.gt(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
 
 @JvmName("gtDouble")
 infix fun io.github.fenrur.signal.Signal<Double>.gt(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a > b }
 
 /**
  * Returns true if this signal's value is less than other's.
  */
 @JvmName("ltInt")
 infix fun io.github.fenrur.signal.Signal<Int>.lt(other: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
 
 @JvmName("ltLong")
 infix fun io.github.fenrur.signal.Signal<Long>.lt(other: io.github.fenrur.signal.Signal<Long>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
 
 @JvmName("ltDouble")
 infix fun io.github.fenrur.signal.Signal<Double>.lt(other: io.github.fenrur.signal.Signal<Double>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a < b }
 
 /**
  * Returns true if this signal's value equals other's.
  */
 infix fun <T> io.github.fenrur.signal.Signal<T>.eq(other: io.github.fenrur.signal.Signal<T>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a == b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a == b }
 
 /**
  * Returns true if this signal's value does not equal other's.
  */
 infix fun <T> io.github.fenrur.signal.Signal<T>.neq(other: io.github.fenrur.signal.Signal<T>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a != b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a != b }
 
 // =============================================================================
 // STRING OPERATORS
@@ -628,7 +628,7 @@ infix fun <T> io.github.fenrur.signal.Signal<T>.neq(other: io.github.fenrur.sign
  * Concatenates two string signals.
  */
 operator fun io.github.fenrur.signal.Signal<String>.plus(other: io.github.fenrur.signal.Signal<String>): io.github.fenrur.signal.Signal<String> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
+    io.github.fenrur.signal.operators.combine(this, other) { a, b -> a + b }
 
 /**
  * Returns true if the string is empty.
@@ -712,7 +712,7 @@ fun <T> io.github.fenrur.signal.Signal<List<T>>.getOrNull(index: Int): io.github
  * Returns element at index from a signal.
  */
 fun <T> io.github.fenrur.signal.Signal<List<T>>.getOrNull(index: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.Signal<T?> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, index) { list, i -> list.getOrNull(i) }
+    io.github.fenrur.signal.operators.combine(this, index) { list, i -> list.getOrNull(i) }
 
 /**
  * Returns true if list contains the element.
@@ -723,7 +723,7 @@ fun <T> io.github.fenrur.signal.Signal<List<T>>.contains(element: T): io.github.
  * Returns true if list contains the element from another signal.
  */
 fun <T> io.github.fenrur.signal.Signal<List<T>>.contains(element: io.github.fenrur.signal.Signal<T>): io.github.fenrur.signal.Signal<Boolean> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, element) { list, e -> e in list }
+    io.github.fenrur.signal.operators.combine(this, element) { list, e -> e in list }
 
 /**
  * Filters the list.
@@ -802,7 +802,7 @@ fun <T : Any> io.github.fenrur.signal.Signal<T?>.orDefault(default: T): io.githu
  * Provides a default value from another signal for nullable signals.
  */
 fun <T : Any> io.github.fenrur.signal.Signal<T?>.orDefault(default: io.github.fenrur.signal.Signal<T>): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.operators.combine(this, default) { value, def -> value ?: def }
+    io.github.fenrur.signal.operators.combine(this, default) { value, def -> value ?: def }
 
 /**
  * Uses value from fallback signal if this signal's value is null.

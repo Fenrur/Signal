@@ -6,18 +6,18 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal reads with forward transform`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("42")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("42")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         assertEquals(42, bimapped.value)
     }
 
     @Test
     fun `bimapped signal writes with reverse transform`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("42")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("42")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         bimapped.value = 100
 
@@ -27,9 +27,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal update applies both transforms`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("10")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("10")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         bimapped.update { it + 5 }
 
@@ -39,9 +39,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal notifies subscribers on source change`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
         val values = mutableListOf<Int>()
 
         bimapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -54,9 +54,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal notifies subscribers on mapped write`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
         val values = mutableListOf<Int>()
 
         bimapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -69,9 +69,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal closes properly`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         assertFalse(bimapped.isClosed)
 
@@ -82,9 +82,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal stops notifications after close`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
         val values = mutableListOf<Int>()
 
         bimapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -98,9 +98,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal write on closed signal does nothing`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         bimapped.close()
         bimapped.value = 99
@@ -110,9 +110,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal update on closed signal does nothing`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         bimapped.close()
         bimapped.update { it + 100 }
@@ -122,9 +122,9 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal can be used as property delegate`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("5")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("5")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         var prop by bimapped
         assertEquals(5, prop)
@@ -135,10 +135,10 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal chaining works`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val doubled = _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it * 2 }, { it / 2 })
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val doubled = io.github.fenrur.signal.impl.BimappedSignal(source, { it * 2 }, { it / 2 })
         val asString =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(doubled, { it.toString() }, { it.toInt() })
+            io.github.fenrur.signal.impl.BimappedSignal(doubled, { it.toString() }, { it.toInt() })
 
         assertEquals("20", asString.value)
 
@@ -149,8 +149,8 @@ class BimappedSignalTest {
 
     @Test
     fun `bimapped signal with identity transforms is pass-through`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(42)
-        val identity = _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it }, { it })
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val identity = io.github.fenrur.signal.impl.BimappedSignal(source, { it }, { it })
 
         assertEquals(42, identity.value)
         identity.value = 100
@@ -159,9 +159,9 @@ class BimappedSignalTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
         val values = mutableListOf<Int>()
 
         val unsubscribe = bimapped.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -176,9 +176,9 @@ class BimappedSignalTest {
 
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("1")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("1")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
         bimapped.close()
 
         val values = mutableListOf<Int>()
@@ -190,9 +190,9 @@ class BimappedSignalTest {
 
     @Test
     fun `toString shows value and state`() {
-        val source = _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal("42")
+        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("42")
         val bimapped =
-            _root_ide_package_.io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
+            io.github.fenrur.signal.impl.BimappedSignal(source, { it.toInt() }, { it.toString() })
 
         assertTrue(bimapped.toString().contains("42"))
         assertTrue(bimapped.toString().contains("BimappedSignal"))

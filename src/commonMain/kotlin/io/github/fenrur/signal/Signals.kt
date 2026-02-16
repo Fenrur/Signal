@@ -20,7 +20,7 @@ import kotlin.jvm.JvmName
  * @return a read-only signal
  */
 fun <T> signalOf(initial: T): io.github.fenrur.signal.Signal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+    io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
 
 /**
  * Creates a [io.github.fenrur.signal.MutableSignal] with the given initial value.
@@ -31,7 +31,7 @@ fun <T> signalOf(initial: T): io.github.fenrur.signal.Signal<T> =
  * @return a mutable signal
  */
 fun <T> mutableSignalOf(initial: T): io.github.fenrur.signal.MutableSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+    io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableSignal] optionally bound to an initial signal.
@@ -44,7 +44,7 @@ fun <T> bindableSignalOf(
     initialSignal: io.github.fenrur.signal.Signal<T>? = null,
     takeOwnership: Boolean = false
 ): io.github.fenrur.signal.BindableSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableSignal(initialSignal, takeOwnership)
+    io.github.fenrur.signal.impl.DefaultBindableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableSignal] with an initial value.
@@ -58,8 +58,8 @@ fun <T> bindableSignalOf(
 fun <T> bindableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): io.github.fenrur.signal.BindableSignal<T> = _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableSignal(
-    _root_ide_package_.io.github.fenrur.signal.signalOf(initialValue), takeOwnership
+): io.github.fenrur.signal.BindableSignal<T> = io.github.fenrur.signal.impl.DefaultBindableSignal(
+    io.github.fenrur.signal.signalOf(initialValue), takeOwnership
 )
 
 /**
@@ -73,7 +73,7 @@ fun <T> bindableMutableSignalOf(
     initialSignal: io.github.fenrur.signal.MutableSignal<T>? = null,
     takeOwnership: Boolean = false
 ): io.github.fenrur.signal.BindableMutableSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableMutableSignal(initialSignal, takeOwnership)
+    io.github.fenrur.signal.impl.DefaultBindableMutableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableMutableSignal] with an initial value.
@@ -88,8 +88,8 @@ fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
 ): io.github.fenrur.signal.BindableMutableSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.DefaultBindableMutableSignal(
-        _root_ide_package_.io.github.fenrur.signal.mutableSignalOf(initialValue), takeOwnership
+    io.github.fenrur.signal.impl.DefaultBindableMutableSignal(
+        io.github.fenrur.signal.mutableSignalOf(initialValue), takeOwnership
     )
 
 // =============================================================================
@@ -138,7 +138,7 @@ fun <T> io.github.fenrur.signal.Signal<T>.asResultFlow(): Flow<Result<T>> = call
  * @return a read-only Signal backed by the StateFlow
  */
 fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.impl.StateFlowSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.StateFlowSignal(this, scope)
+    io.github.fenrur.signal.impl.StateFlowSignal(this, scope)
 
 /**
  * Creates a [io.github.fenrur.signal.impl.MutableStateFlowSignal] from a Kotlin [MutableStateFlow].
@@ -151,7 +151,7 @@ fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.im
  * @return a MutableSignal backed by the MutableStateFlow
  */
 fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.impl.MutableStateFlowSignal<T> =
-    _root_ide_package_.io.github.fenrur.signal.impl.MutableStateFlowSignal(this, scope)
+    io.github.fenrur.signal.impl.MutableStateFlowSignal(this, scope)
 
 // =============================================================================
 // BATCHING
@@ -183,4 +183,4 @@ fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.si
  * @param block the code to execute within the batch
  * @return the result of the block
  */
-fun <T> batch(block: () -> T): T = _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.batch(block)
+fun <T> batch(block: () -> T): T = io.github.fenrur.signal.impl.SignalGraph.batch(block)

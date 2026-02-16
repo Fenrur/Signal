@@ -30,7 +30,7 @@ class FlattenSignal<T>(
     private val currentInner = AtomicReference<io.github.fenrur.signal.Signal<T>?>(null)
 
     // Glitch-free infrastructure
-    private val flag = AtomicReference(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+    private val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
     private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
@@ -51,10 +51,10 @@ class FlattenSignal<T>(
                     val currentValue = this@FlattenSignal.value
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        _root_ide_package_.io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
                     }
                 } catch (e: Throwable) {
-                    _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+                    io.github.fenrur.signal.impl.notifyAllError(listeners, e)
                 }
             }
         }
@@ -68,7 +68,7 @@ class FlattenSignal<T>(
             // Subscribe to outer signal for error propagation
             unsubscribeOuter.store(source.subscribe { result ->
                 if (closed.load()) return@subscribe
-                result.onFailure { ex -> _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
+                result.onFailure { ex -> io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
             })
 
             // Race 4 post-check: if close() ran during registration, undo
@@ -110,7 +110,7 @@ class FlattenSignal<T>(
     private fun getVersion(s: io.github.fenrur.signal.Signal<*>): Long = when (s) {
         is io.github.fenrur.signal.impl.SourceSignalNode -> s.version
         is io.github.fenrur.signal.impl.ComputedSignalNode -> { s.validateAndGet(); s.version }
-        else -> _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+        else -> io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
     }
 
     private fun hasSourcesChanged(): Boolean {
@@ -131,22 +131,22 @@ class FlattenSignal<T>(
         }
 
         when (flag.load()) {
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
                 // Check source versions for non-subscribed reads
                 if (!hasSourcesChanged()) {
                     return cachedValue.load()
                 }
                 // Source changed, fall through to recompute
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
                 if (hasSourcesChanged()) {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
                 } else {
-                    flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
                     return cachedValue.load()
                 }
             }
-            _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
         }
 
         // Get current inner signal
@@ -154,7 +154,7 @@ class FlattenSignal<T>(
             source.value
         } catch (e: Throwable) {
             lastComputeError.store(e)
-            flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+            flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
             throw e
         }
         val oldInner = currentInner.load()
@@ -169,7 +169,7 @@ class FlattenSignal<T>(
             innerUnsubscribe.exchange {}.invoke()
             innerUnsubscribe.store(newInner.subscribe { result ->
                 if (closed.load()) return@subscribe
-                result.onFailure { ex -> _root_ide_package_.io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
+                result.onFailure { ex -> io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
             })
         }
 
@@ -179,7 +179,7 @@ class FlattenSignal<T>(
             lastComputeError.store(e)
             lastOuterVersion.store(getVersion(source))
             lastInnerVersion.store(getVersion(newInner))
-            flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+            flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
             throw e
         }
         val oldValue = cachedValue.load()
@@ -192,7 +192,7 @@ class FlattenSignal<T>(
             _version.incrementAndFetch()
         }
 
-        flag.store(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
         return newValue
     }
 
@@ -201,17 +201,17 @@ class FlattenSignal<T>(
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.DIRTY) == _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
-        if (flag.compareAndSet(_root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.CLEAN, _root_ide_package_.io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) _root_ide_package_.io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
