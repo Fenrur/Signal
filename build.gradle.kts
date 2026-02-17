@@ -119,7 +119,7 @@ tasks.withType<Test> {
 mavenPublishing {
     publishToMavenCentral()
 
-    if (System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null) {
+    if (!System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey").isNullOrBlank()) {
         signAllPublications()
     }
     coordinates("io.github.fenrur", "signal", version.toString())
