@@ -11,8 +11,8 @@ package io.github.fenrur.signal
  *
  * @param T the type of value held by the signal
  */
-interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
-    io.github.fenrur.signal.MutableSignal<T> {
+interface BindableMutableSignal<T> : BindableSignal<T>,
+    MutableSignal<T> {
 
     /**
      * Binds this signal to a new underlying mutable signal.
@@ -23,7 +23,7 @@ interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
      *
      * @param newSignal the new mutable signal to bind to
      */
-    fun bindTo(newSignal: io.github.fenrur.signal.MutableSignal<T>)
+    fun bindTo(newSignal: MutableSignal<T>)
 
     /**
      * Binds this signal to a new underlying signal.
@@ -33,8 +33,8 @@ interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
      * @param newSignal the new signal to bind to (must be a MutableSignal)
      * @throws IllegalArgumentException if the signal is not a MutableSignal
      */
-    override fun bindTo(newSignal: io.github.fenrur.signal.Signal<T>) {
-        if (newSignal is io.github.fenrur.signal.MutableSignal<T>) {
+    override fun bindTo(newSignal: Signal<T>) {
+        if (newSignal is MutableSignal<T>) {
             bindTo(newSignal)
         } else {
             throw IllegalArgumentException("BindableMutableSignal requires a MutableSignal, got ${newSignal::class.simpleName}")
@@ -46,7 +46,7 @@ interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
      *
      * @return the bound mutable signal, or null if not bound
      */
-    override fun currentSignal(): io.github.fenrur.signal.MutableSignal<T>?
+    override fun currentSignal(): MutableSignal<T>?
 
     companion object {
         /**
@@ -58,8 +58,8 @@ interface BindableMutableSignal<T> : io.github.fenrur.signal.BindableSignal<T>,
          * @param target the signal that [source] would bind to
          * @return true if binding would create a cycle, false otherwise
          */
-        fun <T> wouldCreateCycle(source: BindableMutableSignal<T>, target: io.github.fenrur.signal.MutableSignal<T>): Boolean {
-            return io.github.fenrur.signal.BindableSignal.wouldCreateCycle(source, target)
+        fun <T> wouldCreateCycle(source: BindableMutableSignal<T>, target: MutableSignal<T>): Boolean {
+            return BindableSignal.wouldCreateCycle(source, target)
         }
     }
 }

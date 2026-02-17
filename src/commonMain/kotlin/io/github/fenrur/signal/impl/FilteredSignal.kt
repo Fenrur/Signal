@@ -13,11 +13,11 @@ import kotlin.concurrent.atomics.*
  * @param predicate filter condition
  */
 class FilteredSignal<T>(
-    private val source: io.github.fenrur.signal.Signal<T>,
+    private val source: Signal<T>,
     private val predicate: (T) -> Boolean
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<T>() {
+) : AbstractComputedSignal<T>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
 

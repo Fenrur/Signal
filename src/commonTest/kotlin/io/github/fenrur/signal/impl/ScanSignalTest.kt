@@ -10,7 +10,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal applies accumulator to initial value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val scan = source.scan(0) { acc, value -> acc + value }
 
         // Initial: accumulator(0, 10) = 10
@@ -19,7 +19,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal accumulates values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
 
         // Subscribe to enable reactive updates
@@ -39,7 +39,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal notifies subscribers with accumulated values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
         val values = mutableListOf<Int>()
 
@@ -53,7 +53,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal does not emit for same value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val scan = source.scan(0) { acc, value -> acc + value }
         val values = mutableListOf<Int>()
 
@@ -67,7 +67,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal can change type`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan("") { acc, value -> "$acc$value" }
 
         assertEquals("1", scan.value)
@@ -83,7 +83,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal with multiplication`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val source = DefaultMutableSignal(2)
         val scan = source.scan(1) { acc, value -> acc * value }
 
         scan.subscribe { }
@@ -99,7 +99,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal with list accumulation`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(emptyList<Int>()) { acc, value -> acc + value }
 
         scan.subscribe { }
@@ -115,7 +115,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan signal stops receiving after close`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
         val values = mutableListOf<Int>()
 
@@ -130,7 +130,7 @@ class ScanSignalTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
         val values = mutableListOf<Int>()
 
@@ -146,7 +146,7 @@ class ScanSignalTest {
 
     @Test
     fun `multiple subscribers receive same notifications`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scan = source.scan(0) { acc, value -> acc + value }
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
@@ -164,7 +164,7 @@ class ScanSignalTest {
 
     @Test
     fun `scan with max accumulator`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val source = DefaultMutableSignal(5)
         val scan = source.scan(Int.MIN_VALUE) { acc, value -> maxOf(acc, value) }
 
         scan.subscribe { }
@@ -183,7 +183,7 @@ class ScanSignalTest {
 
     @Test
     fun `toString shows value and state`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val scan = source.scan(0) { acc, value -> acc + value }
 
         assertTrue(scan.toString().contains("10"))

@@ -42,9 +42,9 @@ import kotlin.concurrent.atomics.*
 class MutableStateFlowSignal<T>(
     private val stateFlow: MutableStateFlow<T>,
     private val scope: CoroutineScope
-) : io.github.fenrur.signal.MutableSignal<T>, io.github.fenrur.signal.impl.SourceSignalNode {
+) : MutableSignal<T>, SourceSignalNode {
 
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
     private val lastNotifiedValue = AtomicReference(stateFlow.value)
 
@@ -53,7 +53,7 @@ class MutableStateFlowSignal<T>(
     private val collectJob = AtomicReference<Job?>(null)
 
     // Glitch-free infrastructure
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
 
@@ -64,13 +64,13 @@ class MutableStateFlowSignal<T>(
      */
     private val selfUpdateVersion = AtomicLong(-1L)
 
-    private val listenerEffect = object : io.github.fenrur.signal.impl.EffectNode {
+    private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
         override fun execute() {
             pending.store(false)
             if (!closed.load() && listeners.isNotEmpty()) {
-                io.github.fenrur.signal.impl.notifyAllValue(listeners, stateFlow.value)
+                notifyAllValue(listeners, stateFlow.value)
             }
         }
     }
@@ -91,18 +91,18 @@ class MutableStateFlowSignal<T>(
                     if (old != newValue) {
                         // External update detected
                         _version.incrementAndFetch()
-                        io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                        SignalGraph.incrementGlobalVersion()
 
-                        io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                        SignalGraph.startBatch()
                         try {
                             for (target in targets) {
                                 target.markDirty()
                             }
                             if (listeners.isNotEmpty()) {
-                                io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                                SignalGraph.scheduleEffect(listenerEffect)
                             }
                         } finally {
-                            io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                            SignalGraph.endBatch()
                         }
                     }
                 }
@@ -140,22 +140,22 @@ class MutableStateFlowSignal<T>(
                 if (stateFlow.compareAndSet(current, newValue)) {
                     lastNotifiedValue.store(newValue)
                     val newVersion = _version.incrementAndFetch()
-                    io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                    SignalGraph.incrementGlobalVersion()
 
                     // Mark the version we're updating to prevent collector from double-notifying.
                     // This is set AFTER incrementing version so the collector can check it.
                     selfUpdateVersion.store(newVersion)
                     try {
-                        io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                        SignalGraph.startBatch()
                         try {
                             for (target in targets) {
                                 target.markDirty()
                             }
                             if (listeners.isNotEmpty()) {
-                                io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                                SignalGraph.scheduleEffect(listenerEffect)
                             }
                         } finally {
-                            io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                            SignalGraph.endBatch()
                         }
                     } finally {
                         selfUpdateVersion.store(-1L)
@@ -177,21 +177,21 @@ class MutableStateFlowSignal<T>(
             if (stateFlow.compareAndSet(current, next)) {
                 lastNotifiedValue.store(next)
                 val newVersion = _version.incrementAndFetch()
-                io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                SignalGraph.incrementGlobalVersion()
 
                 // Mark the version we're updating to prevent collector from double-notifying
                 selfUpdateVersion.store(newVersion)
                 try {
-                    io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                    SignalGraph.startBatch()
                     try {
                         for (target in targets) {
                             target.markDirty()
                         }
                         if (listeners.isNotEmpty()) {
-                            io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                            SignalGraph.scheduleEffect(listenerEffect)
                         }
                     } finally {
-                        io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                        SignalGraph.endBatch()
                     }
                 } finally {
                     selfUpdateVersion.store(-1L)
@@ -202,7 +202,7 @@ class MutableStateFlowSignal<T>(
         }
     }
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.load()) return {}
         ensureSubscribed()
         listener(Result.success(value))
@@ -215,12 +215,12 @@ class MutableStateFlowSignal<T>(
 
     override val isClosed: Boolean get() = closed.load()
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
         ensureSubscribed()
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
         maybeUnsubscribe()
     }

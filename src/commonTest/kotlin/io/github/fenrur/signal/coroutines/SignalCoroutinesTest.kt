@@ -17,7 +17,7 @@ class SignalCoroutinesTest {
 
     @Test
     fun `asFlow emits current value immediately`() = runTest {
-        val signal = io.github.fenrur.signal.mutableSignalOf(42)
+        val signal = mutableSignalOf(42)
         val flow = signal.asFlow()
 
         val firstValue = flow.first()
@@ -26,7 +26,7 @@ class SignalCoroutinesTest {
 
     @Test
     fun `asFlow emits new values when signal changes`() = runTest {
-        val signal = io.github.fenrur.signal.mutableSignalOf(1)
+        val signal = mutableSignalOf(1)
         val flow = signal.asFlow()
 
         val values = mutableListOf<Int>()

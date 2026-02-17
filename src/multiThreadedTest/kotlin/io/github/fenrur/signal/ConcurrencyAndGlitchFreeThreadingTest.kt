@@ -87,7 +87,7 @@ class ConcurrencyAndGlitchFreeThreadingTest {
             testThread {
                 try {
                     repeat(operations) {
-                        val v = signal.value
+                        signal.value
                         val m = mapped.value
                         // Mapped should always be even (2x something)
                         assertEquals(0, m % 2)
@@ -546,7 +546,7 @@ class ConcurrencyAndGlitchFreeThreadingTest {
             testThread {
                 try {
                     while (running.load()) {
-                        val s = source.value
+                        source.value
                         val d = derived.value
                         // d should always be even
                         if (d % 2 != 0) {

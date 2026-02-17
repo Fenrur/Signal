@@ -7,12 +7,12 @@ import kotlin.concurrent.atomics.*
  * Combines 2 signals into one using a transform function.
  */
 class CombinedSignal2<A, B, R>(
-    private val sa: io.github.fenrur.signal.Signal<A>,
-    private val sb: io.github.fenrur.signal.Signal<B>,
+    private val sa: Signal<A>,
+    private val sb: Signal<B>,
     private val transform: (A, B) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(sa, sb)
+    override val sources: List<Signal<*>> = listOf(sa, sb)
 
     private val lastVersions = AtomicReference(listOf(-1L, -1L))
 
@@ -40,13 +40,13 @@ class CombinedSignal2<A, B, R>(
  * Combines 3 signals into one using a transform function.
  */
 class CombinedSignal3<A, B, C, R>(
-    private val sa: io.github.fenrur.signal.Signal<A>,
-    private val sb: io.github.fenrur.signal.Signal<B>,
-    private val sc: io.github.fenrur.signal.Signal<C>,
+    private val sa: Signal<A>,
+    private val sb: Signal<B>,
+    private val sc: Signal<C>,
     private val transform: (A, B, C) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(sa, sb, sc)
+    override val sources: List<Signal<*>> = listOf(sa, sb, sc)
 
     private val lastVersions = AtomicReference(listOf(-1L, -1L, -1L))
 
@@ -74,14 +74,14 @@ class CombinedSignal3<A, B, C, R>(
  * Combines 4 signals into one using a transform function.
  */
 class CombinedSignal4<A, B, C, D, R>(
-    private val sa: io.github.fenrur.signal.Signal<A>,
-    private val sb: io.github.fenrur.signal.Signal<B>,
-    private val sc: io.github.fenrur.signal.Signal<C>,
-    private val sd: io.github.fenrur.signal.Signal<D>,
+    private val sa: Signal<A>,
+    private val sb: Signal<B>,
+    private val sc: Signal<C>,
+    private val sd: Signal<D>,
     private val transform: (A, B, C, D) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(sa, sb, sc, sd)
+    override val sources: List<Signal<*>> = listOf(sa, sb, sc, sd)
 
     private val lastVersions = AtomicReference(listOf(-1L, -1L, -1L, -1L))
 
@@ -110,15 +110,15 @@ class CombinedSignal4<A, B, C, D, R>(
  * Combines 5 signals into one using a transform function.
  */
 class CombinedSignal5<A, B, C, D, E, R>(
-    private val sa: io.github.fenrur.signal.Signal<A>,
-    private val sb: io.github.fenrur.signal.Signal<B>,
-    private val sc: io.github.fenrur.signal.Signal<C>,
-    private val sd: io.github.fenrur.signal.Signal<D>,
-    private val se: io.github.fenrur.signal.Signal<E>,
+    private val sa: Signal<A>,
+    private val sb: Signal<B>,
+    private val sc: Signal<C>,
+    private val sd: Signal<D>,
+    private val se: Signal<E>,
     private val transform: (A, B, C, D, E) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(sa, sb, sc, sd, se)
+    override val sources: List<Signal<*>> = listOf(sa, sb, sc, sd, se)
 
     private val lastVersions = AtomicReference(listOf(-1L, -1L, -1L, -1L, -1L))
 
@@ -147,16 +147,16 @@ class CombinedSignal5<A, B, C, D, E, R>(
  * Combines 6 signals into one using a transform function.
  */
 class CombinedSignal6<A, B, C, D, E, F, R>(
-    private val sa: io.github.fenrur.signal.Signal<A>,
-    private val sb: io.github.fenrur.signal.Signal<B>,
-    private val sc: io.github.fenrur.signal.Signal<C>,
-    private val sd: io.github.fenrur.signal.Signal<D>,
-    private val se: io.github.fenrur.signal.Signal<E>,
-    private val sf: io.github.fenrur.signal.Signal<F>,
+    private val sa: Signal<A>,
+    private val sb: Signal<B>,
+    private val sc: Signal<C>,
+    private val sd: Signal<D>,
+    private val se: Signal<E>,
+    private val sf: Signal<F>,
     private val transform: (A, B, C, D, E, F) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(sa, sb, sc, sd, se, sf)
+    override val sources: List<Signal<*>> = listOf(sa, sb, sc, sd, se, sf)
 
     private val lastVersions = AtomicReference(listOf(-1L, -1L, -1L, -1L, -1L, -1L))
 
@@ -185,9 +185,9 @@ class CombinedSignal6<A, B, C, D, E, F, R>(
 /**
  * A constant signal that never changes.
  */
-class ConstantSignal<R>(value: R) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+class ConstantSignal<R>(value: R) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = emptyList()
+    override val sources: List<Signal<*>> = emptyList()
 
     override val cachedValue: AtomicReference<R> = AtomicReference(value)
 

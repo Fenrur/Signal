@@ -31,31 +31,31 @@ import kotlin.concurrent.atomics.*
  * @param reverse transforms mapped values back to source values (write direction)
  */
 class BimappedSignal<S, R>(
-    private val source: io.github.fenrur.signal.MutableSignal<S>,
+    private val source: MutableSignal<S>,
     private val forward: (S) -> R,
     private val reverse: (R) -> S
-) : io.github.fenrur.signal.MutableSignal<R>, io.github.fenrur.signal.impl.ComputedSignalNode {
+) : MutableSignal<R>, ComputedSignalNode {
 
     private val cachedValue = AtomicReference<R>(null as R)
     private val hasInitialValue = AtomicBoolean(false)
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<R>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     private val closed = AtomicBoolean(false)
     private val subscribed = AtomicBoolean(false)
-    private val unsubscribeSource = AtomicReference<io.github.fenrur.signal.UnSubscriber> {}
+    private val unsubscribeSource = AtomicReference<UnSubscriber> {}
 
     // Track last transform error for proper error propagation
     private val lastTransformError = AtomicReference<Throwable?>(null)
 
     // Glitch-free infrastructure
-    private val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+    private val flag = AtomicReference(SignalFlag.DIRTY)
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
     private val lastSourceVersion = AtomicLong(-1L)
 
     private val lastNotifiedVersion = AtomicLong(-1L)
 
-    private val listenerEffect = object : io.github.fenrur.signal.impl.EffectNode {
+    private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
         override fun execute() {
@@ -66,10 +66,10 @@ class BimappedSignal<S, R>(
                     val currentValue = this@BimappedSignal.value
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        notifyAllValue(listeners, currentValue)
                     }
                 } catch (e: Throwable) {
-                    io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+                    notifyAllError(listeners, e)
                 }
             }
         }
@@ -80,7 +80,7 @@ class BimappedSignal<S, R>(
             registerAsTarget(source)
             unsubscribeSource.store(source.subscribe { result ->
                 if (closed.load()) return@subscribe
-                result.onFailure { ex -> io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
+                result.onFailure { ex -> notifyAllError(listeners, ex) }
             })
 
             // Race 4 post-check: if close() ran during registration, undo
@@ -91,18 +91,18 @@ class BimappedSignal<S, R>(
         }
     }
 
-    private fun registerAsTarget(source: io.github.fenrur.signal.MutableSignal<*>) {
-        if (source is io.github.fenrur.signal.impl.SourceSignalNode) {
+    private fun registerAsTarget(source: MutableSignal<*>) {
+        if (source is SourceSignalNode) {
             source.addTarget(this)
-        } else if (source is io.github.fenrur.signal.impl.ComputedSignalNode) {
+        } else if (source is ComputedSignalNode) {
             source.addTarget(this)
         }
     }
 
-    private fun unregisterAsTarget(source: io.github.fenrur.signal.MutableSignal<*>) {
-        if (source is io.github.fenrur.signal.impl.SourceSignalNode) {
+    private fun unregisterAsTarget(source: MutableSignal<*>) {
+        if (source is SourceSignalNode) {
             source.removeTarget(this)
-        } else if (source is io.github.fenrur.signal.impl.ComputedSignalNode) {
+        } else if (source is ComputedSignalNode) {
             source.removeTarget(this)
         }
     }
@@ -120,13 +120,13 @@ class BimappedSignal<S, R>(
     }
 
     private fun getSourceVersion(): Long {
-        return if (source is io.github.fenrur.signal.impl.SourceSignalNode) {
+        return if (source is SourceSignalNode) {
             source.version
-        } else if (source is io.github.fenrur.signal.impl.ComputedSignalNode) {
+        } else if (source is ComputedSignalNode) {
             source.validateAndGet()
             source.version
         } else {
-            io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+            SignalGraph.globalVersion.load()
         }
     }
 
@@ -139,22 +139,22 @@ class BimappedSignal<S, R>(
         }
 
         when (flag.load()) {
-            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            SignalFlag.CLEAN -> {
                 // Check source version for non-subscribed reads
                 if (getSourceVersion() == lastSourceVersion.load()) {
                     return cachedValue.load()
                 }
                 // Source changed, fall through to recompute
             }
-            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            SignalFlag.MAYBE_DIRTY -> {
                 if (getSourceVersion() != lastSourceVersion.load()) {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(SignalFlag.DIRTY)
                 } else {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(SignalFlag.CLEAN)
                     return cachedValue.load()
                 }
             }
-            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            SignalFlag.DIRTY -> {}
         }
 
         val sv = source.value
@@ -180,7 +180,7 @@ class BimappedSignal<S, R>(
 
         // Clear any previous error on successful computation
         lastTransformError.store(null)
-        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(SignalFlag.CLEAN)
         return newValue
     }
 
@@ -196,7 +196,7 @@ class BimappedSignal<S, R>(
                 // Store error and notify listeners directly for write errors
                 // (no listenerEffect will catch this, so we must notify here)
                 lastTransformError.store(e)
-                io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+                notifyAllError(listeners, e)
                 throw e
             }
         }
@@ -212,7 +212,7 @@ class BimappedSignal<S, R>(
         } catch (e: Throwable) {
             // Store error for propagation and notify listeners
             lastTransformError.store(e)
-            io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+            notifyAllError(listeners, e)
             throw e
         }
     }
@@ -220,24 +220,24 @@ class BimappedSignal<S, R>(
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(SignalFlag.DIRTY) == SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
-        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(SignalFlag.CLEAN, SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) { targets += target; ensureSubscribed() }
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) { targets -= target; maybeUnsubscribe() }
+    override fun addTarget(target: DirtyMarkable) { targets += target; ensureSubscribed() }
+    override fun removeTarget(target: DirtyMarkable) { targets -= target; maybeUnsubscribe() }
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<R>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
         // Deliver initial value, handling potential transform errors

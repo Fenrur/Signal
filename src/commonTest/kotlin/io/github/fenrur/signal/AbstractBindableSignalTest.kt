@@ -9,24 +9,24 @@ import kotlin.test.*
  *
  * @param S The type of bindable signal being tested
  */
-abstract class AbstractBindableSignalTest<S : io.github.fenrur.signal.Signal<Int>> {
+abstract class AbstractBindableSignalTest<S : Signal<Int>> {
 
     protected abstract fun createUnboundSignal(): S
 
-    protected abstract fun createSignal(source: io.github.fenrur.signal.Signal<Int>): S
+    protected abstract fun createSignal(source: Signal<Int>): S
 
-    protected abstract fun createSignal(source: io.github.fenrur.signal.Signal<Int>, takeOwnership: Boolean): S
+    protected abstract fun createSignal(source: Signal<Int>, takeOwnership: Boolean): S
 
-    protected fun createMutableSource(initial: Int): io.github.fenrur.signal.impl.DefaultMutableSignal<Int> =
-        io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+    protected fun createMutableSource(initial: Int): DefaultMutableSignal<Int> =
+        DefaultMutableSignal(initial)
 
-    protected abstract fun bindTo(signal: S, source: io.github.fenrur.signal.Signal<Int>)
+    protected abstract fun bindTo(signal: S, source: Signal<Int>)
 
     protected abstract fun isBound(signal: S): Boolean
 
-    protected abstract fun currentSignal(signal: S): io.github.fenrur.signal.Signal<Int>?
+    protected abstract fun currentSignal(signal: S): Signal<Int>?
 
-    protected abstract fun wouldCreateCycle(signal: S, target: io.github.fenrur.signal.Signal<Int>): Boolean
+    protected abstract fun wouldCreateCycle(signal: S, target: Signal<Int>): Boolean
 
     // ==================== Unbound state tests ====================
 
@@ -215,7 +215,7 @@ abstract class AbstractBindableSignalTest<S : io.github.fenrur.signal.Signal<Int
     @Test
     fun `wouldCreateCycle returns false when target is regular Signal`() {
         val a = createSignal(createMutableSource(1))
-        val b = io.github.fenrur.signal.signalOf(2)
+        val b = signalOf(2)
 
         assertFalse(wouldCreateCycle(a, b))
     }

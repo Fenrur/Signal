@@ -19,8 +19,8 @@ import kotlin.jvm.JvmName
  * @param initial the value of the signal
  * @return a read-only signal
  */
-fun <T> signalOf(initial: T): io.github.fenrur.signal.Signal<T> =
-    io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+fun <T> signalOf(initial: T): Signal<T> =
+    DefaultMutableSignal(initial)
 
 /**
  * Creates a [io.github.fenrur.signal.MutableSignal] with the given initial value.
@@ -30,8 +30,8 @@ fun <T> signalOf(initial: T): io.github.fenrur.signal.Signal<T> =
  * @param initial the initial value of the signal
  * @return a mutable signal
  */
-fun <T> mutableSignalOf(initial: T): io.github.fenrur.signal.MutableSignal<T> =
-    io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+fun <T> mutableSignalOf(initial: T): MutableSignal<T> =
+    DefaultMutableSignal(initial)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableSignal] optionally bound to an initial signal.
@@ -41,10 +41,10 @@ fun <T> mutableSignalOf(initial: T): io.github.fenrur.signal.MutableSignal<T> =
  * @return a BindableSignal
  */
 fun <T> bindableSignalOf(
-    initialSignal: io.github.fenrur.signal.Signal<T>? = null,
+    initialSignal: Signal<T>? = null,
     takeOwnership: Boolean = false
-): io.github.fenrur.signal.BindableSignal<T> =
-    io.github.fenrur.signal.impl.DefaultBindableSignal(initialSignal, takeOwnership)
+): BindableSignal<T> =
+    DefaultBindableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableSignal] with an initial value.
@@ -58,8 +58,8 @@ fun <T> bindableSignalOf(
 fun <T> bindableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): io.github.fenrur.signal.BindableSignal<T> = io.github.fenrur.signal.impl.DefaultBindableSignal(
-    io.github.fenrur.signal.signalOf(initialValue), takeOwnership
+): BindableSignal<T> = DefaultBindableSignal(
+    signalOf(initialValue), takeOwnership
 )
 
 /**
@@ -70,10 +70,10 @@ fun <T> bindableSignalOf(
  * @return a BindableMutableSignal
  */
 fun <T> bindableMutableSignalOf(
-    initialSignal: io.github.fenrur.signal.MutableSignal<T>? = null,
+    initialSignal: MutableSignal<T>? = null,
     takeOwnership: Boolean = false
-): io.github.fenrur.signal.BindableMutableSignal<T> =
-    io.github.fenrur.signal.impl.DefaultBindableMutableSignal(initialSignal, takeOwnership)
+): BindableMutableSignal<T> =
+    DefaultBindableMutableSignal(initialSignal, takeOwnership)
 
 /**
  * Creates a [io.github.fenrur.signal.BindableMutableSignal] with an initial value.
@@ -87,9 +87,9 @@ fun <T> bindableMutableSignalOf(
 fun <T> bindableMutableSignalOf(
     initialValue: T,
     takeOwnership: Boolean = false
-): io.github.fenrur.signal.BindableMutableSignal<T> =
-    io.github.fenrur.signal.impl.DefaultBindableMutableSignal(
-        io.github.fenrur.signal.mutableSignalOf(initialValue), takeOwnership
+): BindableMutableSignal<T> =
+    DefaultBindableMutableSignal(
+        mutableSignalOf(initialValue), takeOwnership
     )
 
 // =============================================================================
@@ -104,7 +104,7 @@ fun <T> bindableMutableSignalOf(
  *
  * @return a Flow that emits signal values
  */
-fun <T> io.github.fenrur.signal.Signal<T>.asFlow(): Flow<T> = callbackFlow {
+fun <T> Signal<T>.asFlow(): Flow<T> = callbackFlow {
     val unsubscribe = subscribe { result ->
         result.fold(
             onSuccess = { value -> trySend(value) },
@@ -121,7 +121,7 @@ fun <T> io.github.fenrur.signal.Signal<T>.asFlow(): Flow<T> = callbackFlow {
  *
  * @return a Flow that emits Result values
  */
-fun <T> io.github.fenrur.signal.Signal<T>.asResultFlow(): Flow<Result<T>> = callbackFlow {
+fun <T> Signal<T>.asResultFlow(): Flow<Result<T>> = callbackFlow {
     val unsubscribe = subscribe { result ->
         trySend(result)
     }
@@ -137,8 +137,8 @@ fun <T> io.github.fenrur.signal.Signal<T>.asResultFlow(): Flow<Result<T>> = call
  * @param scope the CoroutineScope used to collect from the StateFlow
  * @return a read-only Signal backed by the StateFlow
  */
-fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.impl.StateFlowSignal<T> =
-    io.github.fenrur.signal.impl.StateFlowSignal(this, scope)
+fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): StateFlowSignal<T> =
+    StateFlowSignal(this, scope)
 
 /**
  * Creates a [io.github.fenrur.signal.impl.MutableStateFlowSignal] from a Kotlin [MutableStateFlow].
@@ -150,8 +150,8 @@ fun <T> StateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.im
  * @param scope the CoroutineScope used to collect from the StateFlow
  * @return a MutableSignal backed by the MutableStateFlow
  */
-fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.signal.impl.MutableStateFlowSignal<T> =
-    io.github.fenrur.signal.impl.MutableStateFlowSignal(this, scope)
+fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): MutableStateFlowSignal<T> =
+    MutableStateFlowSignal(this, scope)
 
 // =============================================================================
 // BATCHING
@@ -183,4 +183,4 @@ fun <T> MutableStateFlow<T>.asSignal(scope: CoroutineScope): io.github.fenrur.si
  * @param block the code to execute within the batch
  * @return the result of the block
  */
-fun <T> batch(block: () -> T): T = io.github.fenrur.signal.impl.SignalGraph.batch(block)
+fun <T> batch(block: () -> T): T = SignalGraph.batch(block)

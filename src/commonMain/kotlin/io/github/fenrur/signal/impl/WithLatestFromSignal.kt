@@ -24,13 +24,13 @@ import kotlin.concurrent.atomics.*
  * @param combiner function to combine values
  */
 class WithLatestFromSignal<A, B, R>(
-    private val source: io.github.fenrur.signal.Signal<A>,
-    private val other: io.github.fenrur.signal.Signal<B>,
+    private val source: Signal<A>,
+    private val other: Signal<B>,
     private val combiner: (A, B) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
     // Only source triggers notifications, but we sample from other
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
 

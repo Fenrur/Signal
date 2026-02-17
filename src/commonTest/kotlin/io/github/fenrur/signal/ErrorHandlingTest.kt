@@ -25,7 +25,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `map transformation exception does not crash on value read`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { v: Int ->
             if (v < 0) throw IllegalArgumentException("Negative value")
             v * 2
@@ -44,8 +44,8 @@ class ErrorHandlingTest {
     @Test
     fun `filter predicate exception does not corrupt signal state`() {
         var shouldThrow = false
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { v: Int ->
+        val source = DefaultMutableSignal(10)
+        val filtered = FilteredSignal(source) { v: Int ->
             if (shouldThrow) throw RuntimeException("Predicate error")
             v > 0
         }
@@ -71,9 +71,9 @@ class ErrorHandlingTest {
 
     @Test
     fun `combine transformation exception is thrown on value access`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.operators.combine(a, b) { x, y ->
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = combine(a, b) { x, y ->
             if (x + y > 100) throw ArithmeticException("Sum too large")
             x + y
         }
@@ -94,7 +94,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener exception during update does not prevent other listeners from receiving value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
         var firstListenerThrows = false
@@ -141,7 +141,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener exception in mapped signal does not break other listeners`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
         val values = mutableListOf<Int>()
         var throwOnValue = -1
@@ -175,7 +175,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener exception in batched updates does not prevent batch completion`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val values = mutableListOf<Int>()
         var throwOnValue = -1
 
@@ -192,7 +192,7 @@ class ErrorHandlingTest {
         // Set to throw on value 2
         throwOnValue = 2
 
-        io.github.fenrur.signal.impl.batch {
+        batch {
             source.value = 2
             source.value = 3
         }
@@ -210,7 +210,7 @@ class ErrorHandlingTest {
     @Test
     fun `signal recovers after transformation error`() {
         var shouldThrow = false
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { v: Int ->
             if (shouldThrow) throw RuntimeException("Error")
             v * 2
@@ -241,13 +241,13 @@ class ErrorHandlingTest {
 
     @Test
     fun `flatten signal handles inner signal errors gracefully`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(20)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
+            DefaultMutableSignal<Signal<Int>>(
                 inner1
             )
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val flattened = FlattenSignal(outer)
 
         val values = mutableListOf<Int>()
         flattened.subscribe { result ->
@@ -268,16 +268,16 @@ class ErrorHandlingTest {
     @Test
     fun `flatten signal propagates inner signal computation errors via Result_failure`() {
         var shouldThrow = false
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val mappedInner = inner.map { v: Int ->
             if (shouldThrow) throw RuntimeException("Inner computation error")
             v * 2
         }
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
+            DefaultMutableSignal<Signal<Int>>(
                 mappedInner
             )
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val flattened = FlattenSignal(outer)
 
         val errors = mutableListOf<Throwable>()
         val values = mutableListOf<Int>()
@@ -307,16 +307,16 @@ class ErrorHandlingTest {
     @Test
     fun `flatten signal recovers after inner computation error`() {
         var shouldThrow = false
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val mappedInner = inner.map { v: Int ->
             if (shouldThrow) throw RuntimeException("Error")
             v * 2
         }
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal<io.github.fenrur.signal.Signal<Int>>(
+            DefaultMutableSignal<Signal<Int>>(
                 mappedInner
             )
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val flattened = FlattenSignal(outer)
 
         val errors = mutableListOf<Throwable>()
 
@@ -345,7 +345,7 @@ class ErrorHandlingTest {
     @Test
     fun `signal can be closed while transform would throw`() {
         var shouldThrow = false
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { v: Int ->
             if (shouldThrow) throw RuntimeException("Error")
             v
@@ -376,7 +376,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `source signal remains usable after dependent throws`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val throwingMapped = source.map { v: Int ->
             if (v < 0) throw IllegalArgumentException("Negative")
             v
@@ -409,9 +409,9 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener can unsubscribe itself during callback`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val values = mutableListOf<Int>()
-        var unsubRef: io.github.fenrur.signal.UnSubscriber? = null
+        var unsubRef: UnSubscriber? = null
 
         // Listener that unsubscribes itself after receiving value 2
         val unsub = source.subscribe { result ->
@@ -443,13 +443,13 @@ class ErrorHandlingTest {
     @Ignore
     @Test
     fun `multiple listeners can unsubscribe themselves concurrently`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val unsubRefs = mutableListOf<() -> Unit>()
         val receivedValues = mutableListOf<Pair<Int, Int>>() // (listenerId, value)
 
         // Create 5 listeners that each unsubscribe after receiving value 3
         repeat(5) { id ->
-            var ref: io.github.fenrur.signal.UnSubscriber? = null
+            var ref: UnSubscriber? = null
             val unsub = source.subscribe { result ->
                 result.onSuccess { v ->
                     receivedValues.add(id to v)
@@ -484,7 +484,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `scan accumulator exception is thrown on value read`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scanned = source.scan(0) { acc, v ->
             if (acc + v > 100) throw ArithmeticException("Overflow")
             acc + v
@@ -509,7 +509,7 @@ class ErrorHandlingTest {
     @Test
     fun `scan recovers after accumulator exception`() {
         var shouldThrow = false
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scanned = source.scan(0) { acc, v ->
             if (shouldThrow) throw RuntimeException("Error")
             acc + v
@@ -539,7 +539,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `map exception is propagated to listeners via Result_failure`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { v: Int ->
             if (v < 0) throw IllegalArgumentException("Negative value: $v")
             v * 2
@@ -572,8 +572,8 @@ class ErrorHandlingTest {
 
     @Test
     fun `filter exception is propagated to listeners via Result_failure`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val filtered = io.github.fenrur.signal.impl.FilteredSignal(source) { v: Int ->
+        val source = DefaultMutableSignal(10)
+        val filtered = FilteredSignal(source) { v: Int ->
             if (v < 0) throw IllegalArgumentException("Negative value")
             v > 5
         }
@@ -604,9 +604,9 @@ class ErrorHandlingTest {
 
     @Test
     fun `combine exception is propagated to listeners via Result_failure`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val combined = io.github.fenrur.signal.operators.combine(a, b) { x, y ->
+        val a = DefaultMutableSignal(5)
+        val b = DefaultMutableSignal(3)
+        val combined = combine(a, b) { x, y ->
             if (x == y) throw IllegalStateException("Values cannot be equal")
             x + y
         }
@@ -637,7 +637,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `scan exception is propagated to listeners via Result_failure`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val scanned = source.scan(0) { acc, v ->
             if (v == 0) throw IllegalArgumentException("Zero not allowed")
             acc + v
@@ -673,7 +673,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener exception during initial subscribe propagates but signal remains usable`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
 
         // First subscribe throws
         var thrownException: Throwable? = null
@@ -707,7 +707,7 @@ class ErrorHandlingTest {
 
     @Test
     fun `listener exception during update notification does not break other listeners`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val values = mutableListOf<Int>()
         var shouldThrow = false
 

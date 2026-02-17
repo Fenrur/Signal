@@ -7,7 +7,7 @@ import kotlin.test.*
  * Contains non-threading tests that can run on all platforms.
  * Implement [createSignal] to test a specific Signal implementation.
  */
-abstract class AbstractSignalTest<S : io.github.fenrur.signal.Signal<Int>> {
+abstract class AbstractSignalTest<S : Signal<Int>> {
 
     /**
      * Creates a Signal with the given initial value.
@@ -130,7 +130,7 @@ abstract class AbstractSignalTest<S : io.github.fenrur.signal.Signal<Int>> {
 
     @Test
     fun `can be used in use block`() {
-        var closedSignal: io.github.fenrur.signal.Signal<Int>? = null
+        var closedSignal: Signal<Int>? = null
 
         createSignal(42).use { signal ->
             assertEquals(42, signal.value)

@@ -9,7 +9,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal returns initial value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
 
         assertEquals(Person(1, "John"), distinct.value)
@@ -17,7 +17,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal does not emit when key is same`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -32,7 +32,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal emits when key changes`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -47,7 +47,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal with multiple changes`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -64,7 +64,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal closes properly`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
 
         assertFalse(distinct.isClosed)
@@ -76,7 +76,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal stops receiving after close`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -91,7 +91,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal with primitive key selector`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val distinct = source.distinctUntilChangedBy { it / 10 } // Key is 1 for 10-19, 2 for 20-29, etc.
         val values = mutableListOf<Int>()
 
@@ -108,7 +108,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `distinctBy signal with string key selector`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val distinct = source.distinctUntilChangedBy { it.length }
         val values = mutableListOf<String>()
 
@@ -125,7 +125,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -141,7 +141,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `subscribe on closed signal returns no-op unsubscriber`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         distinct.close()
 
@@ -154,7 +154,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `multiple subscribers receive same notifications`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values1 = mutableListOf<Person>()
         val values2 = mutableListOf<Person>()
@@ -172,7 +172,7 @@ class DistinctBySignalTest {
 
     @Test
     fun `toString shows value and state`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
 
         assertTrue(distinct.toString().contains("Person"))

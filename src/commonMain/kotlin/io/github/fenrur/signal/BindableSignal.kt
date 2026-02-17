@@ -9,7 +9,7 @@ package io.github.fenrur.signal
  *
  * @param T the type of value held by the signal
  */
-interface BindableSignal<out T> : io.github.fenrur.signal.Signal<T> {
+interface BindableSignal<out T> : Signal<T> {
 
     /**
      * Binds this signal to a new underlying signal.
@@ -20,14 +20,14 @@ interface BindableSignal<out T> : io.github.fenrur.signal.Signal<T> {
      *
      * @param newSignal the new signal to bind to
      */
-    fun bindTo(newSignal: io.github.fenrur.signal.Signal<@UnsafeVariance T>)
+    fun bindTo(newSignal: Signal<@UnsafeVariance T>)
 
     /**
      * Returns the currently bound signal.
      *
      * @return the bound signal, or null if not bound
      */
-    fun currentSignal(): io.github.fenrur.signal.Signal<T>?
+    fun currentSignal(): Signal<T>?
 
     /**
      * Returns true if this signal is currently bound to another signal.
@@ -44,11 +44,11 @@ interface BindableSignal<out T> : io.github.fenrur.signal.Signal<T> {
          * @param target the signal that [source] would bind to
          * @return true if binding would create a cycle, false otherwise
          */
-        fun <T> wouldCreateCycle(source: BindableSignal<T>, target: io.github.fenrur.signal.Signal<T>): Boolean {
-            val visited = mutableSetOf<io.github.fenrur.signal.Signal<*>>()
+        fun <T> wouldCreateCycle(source: BindableSignal<T>, target: Signal<T>): Boolean {
+            val visited = mutableSetOf<Signal<*>>()
             visited.add(source)
 
-            var current: io.github.fenrur.signal.Signal<*>? = target
+            var current: Signal<*>? = target
             while (current != null) {
                 if (current in visited) {
                     return true

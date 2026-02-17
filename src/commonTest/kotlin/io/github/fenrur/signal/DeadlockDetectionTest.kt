@@ -17,7 +17,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `direct self-binding is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val signal = io.github.fenrur.signal.bindableSignalOf(source)
 
         // Cannot bind to self
@@ -29,7 +29,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `two-signal cycle is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val a = io.github.fenrur.signal.bindableSignalOf(source)
         val b = io.github.fenrur.signal.bindableSignalOf(a)  // b -> a
 
@@ -42,7 +42,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `three-signal cycle is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val a = io.github.fenrur.signal.bindableSignalOf(source)
         val b = io.github.fenrur.signal.bindableSignalOf(a)  // b -> a
         val c = io.github.fenrur.signal.bindableSignalOf(b)  // c -> b -> a
@@ -56,10 +56,10 @@ class DeadlockDetectionTest {
 
     @Test
     fun `long chain cycle is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
 
         // Create chain: source <- s0 <- s1 <- s2 <- ... <- s9
-        val signals = mutableListOf<io.github.fenrur.signal.BindableSignal<Int>>()
+        val signals = mutableListOf<BindableSignal<Int>>()
         signals.add(io.github.fenrur.signal.bindableSignalOf(source))
         for (i in 1 until 10) {
             signals.add(io.github.fenrur.signal.bindableSignalOf(signals[i - 1]))
@@ -74,7 +74,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `mutable bindable self-binding is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val signal = io.github.fenrur.signal.bindableMutableSignalOf(source)
 
         val ex = assertFailsWith<IllegalStateException> {
@@ -85,7 +85,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `mutable bindable two-signal cycle is rejected`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val a = io.github.fenrur.signal.bindableMutableSignalOf(source)
         val b = io.github.fenrur.signal.bindableMutableSignalOf(a)  // b -> a
 
@@ -101,7 +101,7 @@ class DeadlockDetectionTest {
 
     @Test
     fun `linear chain is valid`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val a = io.github.fenrur.signal.bindableSignalOf(source)
         val b = io.github.fenrur.signal.bindableSignalOf(a)
         val c = io.github.fenrur.signal.bindableSignalOf(b)
@@ -114,8 +114,8 @@ class DeadlockDetectionTest {
 
     @Test
     fun `rebinding to different signal is valid`() {
-        val source1 = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val source2 = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val source1 = DefaultMutableSignal(1)
+        val source2 = DefaultMutableSignal(2)
         val bindable = io.github.fenrur.signal.bindableSignalOf(source1)
 
         assertEquals(1, bindable.value)
@@ -131,10 +131,10 @@ class DeadlockDetectionTest {
         //     a   b
         //      \ /
         //       c (non-bindable combine, not cycle)
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val a = io.github.fenrur.signal.bindableSignalOf(source)
         val b = io.github.fenrur.signal.bindableSignalOf(source)
-        val c = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val c = combine(a, b) { x, y -> x + y }
 
         assertEquals(2, c.value)
 
@@ -144,8 +144,8 @@ class DeadlockDetectionTest {
 
     @Test
     fun `switching binding target is valid`() {
-        val source1 = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val source2 = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val source1 = DefaultMutableSignal(1)
+        val source2 = DefaultMutableSignal(2)
         val a = io.github.fenrur.signal.bindableSignalOf(source1)
         val b = io.github.fenrur.signal.bindableSignalOf(source2)
 

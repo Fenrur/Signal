@@ -8,54 +8,54 @@ import io.github.fenrur.signal.mutableSignalOf
 import io.github.fenrur.signal.signalOf
 import kotlin.test.*
 
-class DefaultBindableSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fenrur.signal.Signal<Int>>() {
+class DefaultBindableSignalTest : AbstractSignalTest<Signal<Int>>() {
 
-    override fun createSignal(initial: Int): io.github.fenrur.signal.Signal<Int> {
-        val source = io.github.fenrur.signal.signalOf(initial)
-        return io.github.fenrur.signal.impl.DefaultBindableSignal(source)
+    override fun createSignal(initial: Int): Signal<Int> {
+        val source = signalOf(initial)
+        return DefaultBindableSignal(source)
     }
 
     // ==================== Bindable-specific test implementation ====================
 
-    class BindableBehaviorTests : io.github.fenrur.signal.AbstractBindableSignalTest<io.github.fenrur.signal.BindableSignal<Int>>() {
+    class BindableBehaviorTests : AbstractBindableSignalTest<BindableSignal<Int>>() {
 
-        override fun createUnboundSignal(): io.github.fenrur.signal.BindableSignal<Int> =
-            io.github.fenrur.signal.impl.DefaultBindableSignal()
+        override fun createUnboundSignal(): BindableSignal<Int> =
+            DefaultBindableSignal()
 
-        override fun createSignal(source: io.github.fenrur.signal.Signal<Int>): io.github.fenrur.signal.BindableSignal<Int> =
-            io.github.fenrur.signal.impl.DefaultBindableSignal(source)
+        override fun createSignal(source: Signal<Int>): BindableSignal<Int> =
+            DefaultBindableSignal(source)
 
-        override fun createSignal(source: io.github.fenrur.signal.Signal<Int>, takeOwnership: Boolean): io.github.fenrur.signal.BindableSignal<Int> =
-            io.github.fenrur.signal.impl.DefaultBindableSignal(source, takeOwnership)
+        override fun createSignal(source: Signal<Int>, takeOwnership: Boolean): BindableSignal<Int> =
+            DefaultBindableSignal(source, takeOwnership)
 
-        override fun bindTo(signal: io.github.fenrur.signal.BindableSignal<Int>, source: io.github.fenrur.signal.Signal<Int>) {
+        override fun bindTo(signal: BindableSignal<Int>, source: Signal<Int>) {
             signal.bindTo(source)
         }
 
-        override fun isBound(signal: io.github.fenrur.signal.BindableSignal<Int>): Boolean =
+        override fun isBound(signal: BindableSignal<Int>): Boolean =
             signal.isBound()
 
-        override fun currentSignal(signal: io.github.fenrur.signal.BindableSignal<Int>): io.github.fenrur.signal.Signal<Int>? =
+        override fun currentSignal(signal: BindableSignal<Int>): Signal<Int>? =
             signal.currentSignal()
 
-        override fun wouldCreateCycle(signal: io.github.fenrur.signal.BindableSignal<Int>, target: io.github.fenrur.signal.Signal<Int>): Boolean =
-            io.github.fenrur.signal.BindableSignal.wouldCreateCycle(signal, target)
+        override fun wouldCreateCycle(signal: BindableSignal<Int>, target: Signal<Int>): Boolean =
+            BindableSignal.wouldCreateCycle(signal, target)
     }
 
     // ==================== DefaultBindableSignal-specific tests ====================
 
     @Test
     fun `can bind to read-only signal`() {
-        val readOnly = io.github.fenrur.signal.signalOf(42)
-        val signal = io.github.fenrur.signal.impl.DefaultBindableSignal(readOnly)
+        val readOnly = signalOf(42)
+        val signal = DefaultBindableSignal(readOnly)
 
         assertEquals(42, signal.value)
     }
 
     @Test
     fun `bindable signal reflects source value without write capability`() {
-        val source = io.github.fenrur.signal.mutableSignalOf(10)
-        val signal = io.github.fenrur.signal.impl.DefaultBindableSignal(source)
+        val source = mutableSignalOf(10)
+        val signal = DefaultBindableSignal(source)
 
         assertEquals(10, signal.value)
 
@@ -65,8 +65,8 @@ class DefaultBindableSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.
 
     @Test
     fun `toString shows value and state`() {
-        val signal = io.github.fenrur.signal.impl.DefaultBindableSignal(
-            io.github.fenrur.signal.signalOf(42)
+        val signal = DefaultBindableSignal(
+            signalOf(42)
         )
         assertTrue(signal.toString().contains("42"))
         assertTrue(signal.toString().contains("DefaultBindableSignal"))
@@ -74,7 +74,7 @@ class DefaultBindableSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.
 
     @Test
     fun `toString shows not bound when unbound`() {
-        val signal = io.github.fenrur.signal.impl.DefaultBindableSignal<Int>()
+        val signal = DefaultBindableSignal<Int>()
         assertTrue(signal.toString().contains("<not bound>"))
     }
 }

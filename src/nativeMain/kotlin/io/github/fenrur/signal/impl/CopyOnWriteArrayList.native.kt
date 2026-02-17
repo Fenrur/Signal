@@ -12,7 +12,8 @@ actual class CopyOnWriteArrayList<E> actual constructor() : AbstractMutableList<
     actual override fun add(index: Int, element: E) {
         while (true) {
             val current = ref.load()
-            val next = ArrayList(current).apply { add(index, element) }
+            val next = ArrayList(current)
+            next.add(index, element)
             if (ref.compareAndSet(current, next)) return
         }
     }
@@ -21,7 +22,8 @@ actual class CopyOnWriteArrayList<E> actual constructor() : AbstractMutableList<
         while (true) {
             val current = ref.load()
             val removed = current[index]
-            val next = ArrayList(current).apply { removeAt(index) }
+            val next = ArrayList(current)
+            next.removeAt(index)
             if (ref.compareAndSet(current, next)) return removed
         }
     }
@@ -30,7 +32,8 @@ actual class CopyOnWriteArrayList<E> actual constructor() : AbstractMutableList<
         while (true) {
             val current = ref.load()
             val old = current[index]
-            val next = ArrayList(current).apply { set(index, element) }
+            val next = ArrayList(current)
+            next[index] = element
             if (ref.compareAndSet(current, next)) return old
         }
     }
@@ -38,7 +41,8 @@ actual class CopyOnWriteArrayList<E> actual constructor() : AbstractMutableList<
     actual override fun add(element: E): Boolean {
         while (true) {
             val current = ref.load()
-            val next = ArrayList(current).apply { add(element) }
+            val next = ArrayList(current)
+            next.add(element)
             if (ref.compareAndSet(current, next)) return true
         }
     }
@@ -47,7 +51,8 @@ actual class CopyOnWriteArrayList<E> actual constructor() : AbstractMutableList<
         while (true) {
             val current = ref.load()
             if (element !in current) return false
-            val next = ArrayList(current).apply { remove(element) }
+            val next = ArrayList(current)
+            next.remove(element)
             if (ref.compareAndSet(current, next)) return true
         }
     }

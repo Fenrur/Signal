@@ -7,9 +7,9 @@ import kotlin.test.*
  * Contains non-threading tests that can run on all platforms.
  * Extends [io.github.fenrur.signal.AbstractSignalTest] to inherit all Signal tests.
  */
-abstract class AbstractMutableSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fenrur.signal.MutableSignal<Int>>() {
+abstract class AbstractMutableSignalTest : AbstractSignalTest<MutableSignal<Int>>() {
 
-    abstract override fun createSignal(initial: Int): io.github.fenrur.signal.MutableSignal<Int>
+    abstract override fun createSignal(initial: Int): MutableSignal<Int>
 
     // ==================== value setter ====================
 
@@ -166,8 +166,8 @@ abstract class AbstractMutableSignalTest : io.github.fenrur.signal.AbstractSigna
         assertNull(signal.value)
     }
 
-    protected open fun createNullableSignal(): io.github.fenrur.signal.MutableSignal<Int?> {
+    protected open fun createNullableSignal(): MutableSignal<Int?> {
         @Suppress("UNCHECKED_CAST")
-        return createSignal(0) as io.github.fenrur.signal.MutableSignal<Int?>
+        return createSignal(0) as MutableSignal<Int?>
     }
 }

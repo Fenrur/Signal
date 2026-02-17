@@ -8,18 +8,18 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 combines two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         assertEquals(30, combined.value)
     }
 
     @Test
     fun `combined2 updates when first signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         a.value = 100
 
@@ -28,9 +28,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 updates when second signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         b.value = 200
 
@@ -39,9 +39,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined2 notifies subscribers`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
         val values = mutableListOf<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -56,20 +56,20 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined3 combines three signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val combined = CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
 
         assertEquals(6, combined.value)
     }
 
     @Test
     fun `combined3 updates when any signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val combined = CombinedSignal3(a, b, c) { x, y, z -> x + y + z }
 
         a.value = 10
         assertEquals(15, combined.value)
@@ -85,24 +85,24 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined4 combines four signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
         val combined =
-            io.github.fenrur.signal.impl.CombinedSignal4(a, b, c, d) { w, x, y, z -> w + x + y + z }
+            CombinedSignal4(a, b, c, d) { w, x, y, z -> w + x + y + z }
 
         assertEquals(10, combined.value)
     }
 
     @Test
     fun `combined4 updates when any signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
         val combined =
-            io.github.fenrur.signal.impl.CombinedSignal4(a, b, c, d) { w, x, y, z -> w * x * y * z }
+            CombinedSignal4(a, b, c, d) { w, x, y, z -> w * x * y * z }
 
         d.value = 10
 
@@ -113,12 +113,12 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined5 combines five signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal5(
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val combined = CombinedSignal5(
             a,
             b,
             c,
@@ -133,13 +133,13 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined6 combines six signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val f = io.github.fenrur.signal.impl.DefaultMutableSignal(6)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal6(
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val f = DefaultMutableSignal(6)
+        val combined = CombinedSignal6(
             a,
             b,
             c,
@@ -153,13 +153,13 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined6 updates when last signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val f = io.github.fenrur.signal.impl.DefaultMutableSignal(6)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal6(
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val f = DefaultMutableSignal(6)
+        val combined = CombinedSignal6(
             a,
             b,
             c,
@@ -177,9 +177,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signal closes properly`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
 
         combined.close()
 
@@ -188,9 +188,9 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signal stops receiving after close`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.impl.CombinedSignal2(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = CombinedSignal2(a, b) { x, y -> x + y }
         val values = mutableListOf<Int>()
 
         combined.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -206,10 +206,10 @@ class CombinedSignalsTest {
 
     @Test
     fun `combined signals can have different types`() {
-        val name = io.github.fenrur.signal.impl.DefaultMutableSignal("John")
-        val age = io.github.fenrur.signal.impl.DefaultMutableSignal(30)
+        val name = DefaultMutableSignal("John")
+        val age = DefaultMutableSignal(30)
         val combined =
-            io.github.fenrur.signal.impl.CombinedSignal2(name, age) { n, a -> "$n is $a years old" }
+            CombinedSignal2(name, age) { n, a -> "$n is $a years old" }
 
         assertEquals("John is 30 years old", combined.value)
 
@@ -221,10 +221,10 @@ class CombinedSignalsTest {
     fun `combined signals can produce complex types`() {
         data class Person(val name: String, val age: Int)
 
-        val name = io.github.fenrur.signal.impl.DefaultMutableSignal("John")
-        val age = io.github.fenrur.signal.impl.DefaultMutableSignal(30)
+        val name = DefaultMutableSignal("John")
+        val age = DefaultMutableSignal(30)
         val combined =
-            io.github.fenrur.signal.impl.CombinedSignal2(name, age) { n, a -> Person(n, a) }
+            CombinedSignal2(name, age) { n, a -> Person(n, a) }
 
         assertEquals(Person("John", 30), combined.value)
     }

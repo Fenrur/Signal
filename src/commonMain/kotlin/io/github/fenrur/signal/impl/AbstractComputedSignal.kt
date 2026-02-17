@@ -32,14 +32,14 @@ import kotlin.concurrent.atomics.*
  *
  * @param R the type of value held by this signal
  */
-abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
-    io.github.fenrur.signal.impl.ComputedSignalNode {
+abstract class AbstractComputedSignal<R> : Signal<R>,
+    ComputedSignalNode {
 
     // Signal state
-    protected val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<R>>()
+    protected val listeners = CopyOnWriteArrayList<SubscribeListener<R>>()
     protected val closed = AtomicBoolean(false)
     protected val subscribed = AtomicBoolean(false)
-    protected val unsubscribers = AtomicReference<List<io.github.fenrur.signal.UnSubscriber>>(emptyList())
+    protected val unsubscribers = AtomicReference<List<UnSubscriber>>(emptyList())
 
     /**
      * Stores the last exception thrown by [computeValue].
@@ -48,10 +48,10 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
     protected val lastComputeError = AtomicReference<Throwable?>(null)
 
     // Glitch-free infrastructure
-    protected val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+    protected val flag = AtomicReference(SignalFlag.CLEAN)
     protected val _version = AtomicLong(1L)
     override val version: Long get() = _version.load()
-    protected val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    protected val targets = CopyOnWriteArrayList<DirtyMarkable>()
     protected val lastNotifiedVersion = AtomicLong(-1L)
 
     // Cached value
@@ -60,7 +60,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
     /**
      * The source signals this computed signal depends on.
      */
-    protected abstract val sources: List<io.github.fenrur.signal.Signal<*>>
+    protected abstract val sources: List<Signal<*>>
 
     /**
      * Computes the current value. Called during validation when dirty.
@@ -79,7 +79,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
      */
     protected abstract fun updateSourceVersions()
 
-    private val listenerEffect = object : io.github.fenrur.signal.impl.EffectNode {
+    private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
 
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
@@ -91,11 +91,11 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
                     val currentValue = this@AbstractComputedSignal.value
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        notifyAllValue(listeners, currentValue)
                     }
                 } catch (e: Throwable) {
                     // Notify listeners of the computation error
-                    io.github.fenrur.signal.impl.notifyAllError(listeners, e)
+                    notifyAllError(listeners, e)
                 }
             }
         }
@@ -106,8 +106,8 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             // Register as target of all sources
             sources.forEach { source ->
                 when (source) {
-                    is io.github.fenrur.signal.impl.SourceSignalNode -> source.addTarget(this)
-                    is io.github.fenrur.signal.impl.ComputedSignalNode -> source.addTarget(this)
+                    is SourceSignalNode -> source.addTarget(this)
+                    is ComputedSignalNode -> source.addTarget(this)
                 }
             }
 
@@ -116,7 +116,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
                 source.subscribe { result ->
                     if (closed.load()) return@subscribe
                     result.onFailure { ex ->
-                        io.github.fenrur.signal.impl.notifyAllError(
+                        notifyAllError(
                             listeners,
                             ex
                         )
@@ -129,8 +129,8 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             if (closed.load()) {
                 sources.forEach { source ->
                     when (source) {
-                        is io.github.fenrur.signal.impl.SourceSignalNode -> source.removeTarget(this)
-                        is io.github.fenrur.signal.impl.ComputedSignalNode -> source.removeTarget(this)
+                        is SourceSignalNode -> source.removeTarget(this)
+                        is ComputedSignalNode -> source.removeTarget(this)
                     }
                 }
                 unsubscribers.exchange(emptyList()).forEach { it.invoke() }
@@ -142,8 +142,8 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
         if (listeners.isEmpty() && targets.isEmpty() && subscribed.compareAndSet(true, false)) {
             sources.forEach { source ->
                 when (source) {
-                    is io.github.fenrur.signal.impl.SourceSignalNode -> source.removeTarget(this)
-                    is io.github.fenrur.signal.impl.ComputedSignalNode -> source.removeTarget(this)
+                    is SourceSignalNode -> source.removeTarget(this)
+                    is ComputedSignalNode -> source.removeTarget(this)
                 }
             }
             unsubscribers.exchange(emptyList()).forEach { it.invoke() }
@@ -155,13 +155,13 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
         }
     }
 
-    protected fun getVersion(signal: io.github.fenrur.signal.Signal<*>): Long = when (signal) {
-        is io.github.fenrur.signal.impl.SourceSignalNode -> signal.version
-        is io.github.fenrur.signal.impl.ComputedSignalNode -> {
+    protected fun getVersion(signal: Signal<*>): Long = when (signal) {
+        is SourceSignalNode -> signal.version
+        is ComputedSignalNode -> {
             signal.validateAndGet()
             signal.version
         }
-        else -> io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+        else -> SignalGraph.globalVersion.load()
     }
 
     protected open fun validateAndGetTyped(): R {
@@ -176,20 +176,20 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
         }
 
         when (flag.load()) {
-            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            SignalFlag.CLEAN -> {
                 if (!hasSourcesChanged()) {
                     return cachedValue.load()
                 }
             }
-            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            SignalFlag.MAYBE_DIRTY -> {
                 if (hasSourcesChanged()) {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(SignalFlag.DIRTY)
                 } else {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(SignalFlag.CLEAN)
                     return cachedValue.load()
                 }
             }
-            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            SignalFlag.DIRTY -> {}
         }
 
         // Recompute with exception handling
@@ -200,7 +200,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             lastComputeError.store(e)
             // Update source versions so we don't keep retrying with same input
             updateSourceVersions()
-            flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+            flag.store(SignalFlag.CLEAN)
             // Rethrow - listeners are notified through the effect mechanism
             throw e
         }
@@ -213,7 +213,7 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             _version.incrementAndFetch()
         }
 
-        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(SignalFlag.CLEAN)
         return newValue
     }
 
@@ -224,32 +224,32 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(SignalFlag.DIRTY) == SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
         // This prevents redundant propagation if multiple threads call concurrently
-        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(SignalFlag.CLEAN, SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
         ensureSubscribed()
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
         maybeUnsubscribe()
     }
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<R>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<R>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
         listener(Result.success(value))
@@ -265,8 +265,8 @@ abstract class AbstractComputedSignal<R> : io.github.fenrur.signal.Signal<R>,
             if (subscribed.compareAndSet(true, false)) {
                 sources.forEach { source ->
                     when (source) {
-                        is io.github.fenrur.signal.impl.SourceSignalNode -> source.removeTarget(this)
-                        is io.github.fenrur.signal.impl.ComputedSignalNode -> source.removeTarget(this)
+                        is SourceSignalNode -> source.removeTarget(this)
+                        is ComputedSignalNode -> source.removeTarget(this)
                     }
                 }
                 unsubscribers.exchange(emptyList()).forEach { it.invoke() }

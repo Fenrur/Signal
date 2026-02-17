@@ -41,7 +41,7 @@ import kotlin.reflect.KProperty
  *
  * @param T the type of value held by the signal
  */
-interface MutableSignal<T> : io.github.fenrur.signal.Signal<T>, ReadWriteProperty<Any?, T> {
+interface MutableSignal<T> : Signal<T>, ReadWriteProperty<Any?, T> {
 
     /**
      * The current value of the signal. Setting this will notify all subscribers.

@@ -21,12 +21,12 @@ import kotlin.concurrent.atomics.*
  * @param accumulator function combining accumulator with each new value
  */
 class ScanSignal<T, R>(
-    private val source: io.github.fenrur.signal.Signal<T>,
+    private val source: Signal<T>,
     initial: R,
     private val accumulator: (acc: R, value: T) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
     private val lastSourceValue: AtomicReference<T>

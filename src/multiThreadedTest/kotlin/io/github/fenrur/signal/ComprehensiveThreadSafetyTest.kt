@@ -24,7 +24,7 @@ class ComprehensiveThreadSafetyTest {
         val source = DefaultMutableSignal(0)
         val pairwise = source.pairwise()
         val emissions = CopyOnWriteArrayList<Pair<Int, Int>>()
-        val latch = TestCountDownLatch(1)
+        TestCountDownLatch(1)
 
         pairwise.subscribe { result ->
             result.onSuccess { emissions.add(it) }

@@ -12,11 +12,11 @@ import kotlin.concurrent.atomics.*
  * @param transform the transformation function
  */
 class MappedSignal<S, R>(
-    private val source: io.github.fenrur.signal.Signal<S>,
+    private val source: Signal<S>,
     private val transform: (S) -> R
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<R>() {
+) : AbstractComputedSignal<R>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
 

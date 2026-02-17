@@ -12,10 +12,10 @@ import kotlin.concurrent.atomics.*
  * @param source the source signal
  */
 class PairwiseSignal<T>(
-    private val source: io.github.fenrur.signal.Signal<T>
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<Pair<T, T>>() {
+    private val source: Signal<T>
+) : AbstractComputedSignal<Pair<T, T>>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
     private val previousValue: AtomicReference<T>

@@ -24,12 +24,12 @@ import kotlin.concurrent.atomics.*
  * @param T the type of value held by the signal
  * @param initial the value of the signal
  */
-class DefaultSignal<T>(initial: T) : io.github.fenrur.signal.Signal<T>, io.github.fenrur.signal.impl.SourceSignalNode {
+class DefaultSignal<T>(initial: T) : Signal<T>, SourceSignalNode {
 
     private val ref = AtomicReference(initial)
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
     private val _version = AtomicLong(1L)
 
     override val version: Long get() = _version.load()
@@ -40,7 +40,7 @@ class DefaultSignal<T>(initial: T) : io.github.fenrur.signal.Signal<T>, io.githu
     override val isClosed: Boolean
         get() = closed.load()
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
         listener(Result.success(value))
         listeners += listener
@@ -54,11 +54,11 @@ class DefaultSignal<T>(initial: T) : io.github.fenrur.signal.Signal<T>, io.githu
         }
     }
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
     }
 

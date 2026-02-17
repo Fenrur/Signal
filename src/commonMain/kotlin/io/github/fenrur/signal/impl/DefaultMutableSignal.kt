@@ -19,17 +19,17 @@ import kotlin.concurrent.atomics.*
  * @param T the type of value held by the signal
  * @param initial the initial value of the signal
  */
-class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSignal<T>,
-    io.github.fenrur.signal.impl.SourceSignalNode {
+class DefaultMutableSignal<T>(initial: T) : MutableSignal<T>,
+    SourceSignalNode {
 
     private val ref = AtomicReference(initial)
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
 
     /**
      * Targets in the dependency graph (computed signals that depend on this).
      */
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
 
     /**
      * Local version counter. Incremented when value changes.
@@ -48,10 +48,10 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
             if (old != new) {
                 // Increment versions
                 _version.incrementAndFetch()
-                io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                SignalGraph.incrementGlobalVersion()
 
                 // Start batch to collect all effects
-                io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                SignalGraph.startBatch()
                 try {
                     // PUSH phase: mark all targets as dirty
                     for (target in targets) {
@@ -63,7 +63,7 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                         scheduleListenerNotification(new)
                     }
                 } finally {
-                    io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                    SignalGraph.endBatch()
                 }
             }
         }
@@ -78,10 +78,10 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                 if (!isClosed) {
                     // Increment versions
                     _version.incrementAndFetch()
-                    io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                    SignalGraph.incrementGlobalVersion()
 
                     // Start batch to collect all effects
-                    io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                    SignalGraph.startBatch()
                     try {
                         // PUSH phase: mark all targets as dirty
                         for (target in targets) {
@@ -93,7 +93,7 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                             scheduleListenerNotification(next)
                         }
                     } finally {
-                        io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                        SignalGraph.endBatch()
                     }
                 }
                 return
@@ -103,7 +103,7 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
     }
 
     private fun scheduleListenerNotification(newValue: T) {
-        val effect = object : io.github.fenrur.signal.impl.EffectNode {
+        val effect = object : EffectNode {
             private val pending = AtomicBoolean(false)
 
             override fun markPending(): Boolean = pending.compareAndSet(false, true)
@@ -113,25 +113,25 @@ class DefaultMutableSignal<T>(initial: T) : io.github.fenrur.signal.MutableSigna
                 if (!isClosed) {
                     // Read current value at execution time for consistency
                     val currentValue = ref.load()
-                    io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                    notifyAllValue(listeners, currentValue)
                 }
             }
         }
-        io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(effect)
+        SignalGraph.scheduleEffect(effect)
     }
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
         listener(Result.success(value))
         listeners += listener
         return { listeners -= listener }
     }
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
     }
 

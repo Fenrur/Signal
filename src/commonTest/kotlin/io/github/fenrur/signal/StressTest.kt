@@ -21,9 +21,9 @@ class StressTest {
 
     @Test
     fun `deep signal chain - 100 map operators`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
 
-        var chain: io.github.fenrur.signal.Signal<Int> = source
+        var chain: Signal<Int> = source
         repeat(100) {
             chain = chain.map { it + 1 }
         }
@@ -44,9 +44,9 @@ class StressTest {
 
     @Test
     fun `deep signal chain - 50 mixed operators`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
 
-        var chain: io.github.fenrur.signal.Signal<Int> = source
+        var chain: Signal<Int> = source
         repeat(50) { i ->
             chain = when (i % 3) {
                 0 -> chain.map { it + 1 }
@@ -72,7 +72,7 @@ class StressTest {
 
     @Test
     fun `wide graph - 50 derived signals from single source`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
 
         val derived = List(50) { i ->
             source.map { it + i }
@@ -98,7 +98,7 @@ class StressTest {
 
     @Test
     fun `wide graph - combine many signals`() {
-        val signals = List(20) { i -> io.github.fenrur.signal.impl.DefaultMutableSignal(i) }
+        val signals = List(20) { i -> DefaultMutableSignal(i) }
         val combined = signals.combineAll()
 
         val emissions = mutableListOf<List<Int>>()
@@ -123,14 +123,14 @@ class StressTest {
 
     @Test
     fun `large batch - 1000 updates in single batch`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val mapped = source.map { it * 2 }
 
         val emissions = mutableListOf<Int>()
         mapped.subscribe { r -> r.onSuccess { emissions.add(it) } }
         emissions.clear()
 
-        io.github.fenrur.signal.impl.batch {
+        batch {
             repeat(1000) { i ->
                 source.value = i
             }
@@ -143,14 +143,14 @@ class StressTest {
 
     @Test
     fun `large batch with combined signals`() {
-        val signals = List(10) { i -> io.github.fenrur.signal.impl.DefaultMutableSignal(i) }
+        val signals = List(10) { i -> DefaultMutableSignal(i) }
         val combined = signals.combineAll()
 
         val emissions = mutableListOf<List<Int>>()
         combined.subscribe { r -> r.onSuccess { emissions.add(it) } }
         emissions.clear()
 
-        io.github.fenrur.signal.impl.batch {
+        batch {
             repeat(100) { iteration ->
                 signals.forEachIndexed { idx, signal ->
                     signal.value = iteration * 10 + idx
@@ -169,7 +169,7 @@ class StressTest {
 
     @Test
     fun `many subscribers - 100 listeners on single signal`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
 
         val emissions = List(100) { mutableListOf<Int>() }
         val unsubscribers = List(100) { idx ->
@@ -211,11 +211,11 @@ class StressTest {
         //         \ | /
         //          final
 
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
 
         val level1 = List(3) { i -> source.map { it + i } }
         val level2 = List(3) { i ->
-            io.github.fenrur.signal.operators.combine(
+            combine(
                 level1[i],
                 level1[(i + 1) % 3]
             ) { a, b -> a + b }
@@ -239,7 +239,7 @@ class StressTest {
     @Test
     fun `create and dispose many signals`() {
         repeat(1000) { iteration ->
-            val source = io.github.fenrur.signal.impl.DefaultMutableSignal(iteration)
+            val source = DefaultMutableSignal(iteration)
             val mapped = source.map { it * 2 }
             val filtered = mapped.filter { it > 0 }
             val scanned = filtered.scan(0) { acc, v -> acc + v }
@@ -256,9 +256,9 @@ class StressTest {
     @Test
     fun `create and dispose deep chains`() {
         repeat(100) { iteration ->
-            val source = io.github.fenrur.signal.impl.DefaultMutableSignal(iteration)
+            val source = DefaultMutableSignal(iteration)
 
-            var chain: io.github.fenrur.signal.Signal<Int> = source
+            var chain: Signal<Int> = source
             repeat(50) {
                 chain = chain.map { it + 1 }
             }

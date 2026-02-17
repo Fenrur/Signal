@@ -60,7 +60,7 @@ class DeadlockDetectionThreadingTest {
     @Test
     fun `no deadlock with concurrent batch operations`() = repeat(5) {
         val source = DefaultMutableSignal(0)
-        val mapped = source.map { it * 2 }
+        source.map { it * 2 }
 
         val startLatch = TestCountDownLatch(1)
         val doneLatch = TestCountDownLatch(4)

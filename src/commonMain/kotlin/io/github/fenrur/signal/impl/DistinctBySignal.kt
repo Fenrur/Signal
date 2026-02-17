@@ -12,11 +12,11 @@ import kotlin.concurrent.atomics.*
  * @param keySelector function to extract comparison key
  */
 class DistinctBySignal<T, K>(
-    private val source: io.github.fenrur.signal.Signal<T>,
+    private val source: Signal<T>,
     private val keySelector: (T) -> K
-) : io.github.fenrur.signal.impl.AbstractComputedSignal<T>() {
+) : AbstractComputedSignal<T>() {
 
-    override val sources: List<io.github.fenrur.signal.Signal<*>> = listOf(source)
+    override val sources: List<Signal<*>> = listOf(source)
 
     private val lastSourceVersion = AtomicLong(-1L)
     private val lastKey: AtomicReference<K>

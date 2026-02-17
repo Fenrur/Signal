@@ -29,16 +29,16 @@ import kotlin.concurrent.atomics.*
  * @param takeOwnership if true, closes bound signals when unbinding or closing
  */
 class DefaultBindableSignal<T>(
-    initial: io.github.fenrur.signal.Signal<T>? = null,
+    initial: Signal<T>? = null,
     private val takeOwnership: Boolean = false
-) : io.github.fenrur.signal.BindableSignal<T>, io.github.fenrur.signal.impl.ComputedSignalNode {
+) : BindableSignal<T>, ComputedSignalNode {
 
     private data class BindingData<T>(
-        val signal: io.github.fenrur.signal.Signal<T>,
-        val unSubscriber: io.github.fenrur.signal.UnSubscriber
+        val signal: Signal<T>,
+        val unSubscriber: UnSubscriber
     )
 
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
     private val bindingData = AtomicReference<BindingData<T>?>(null)
 
@@ -46,15 +46,15 @@ class DefaultBindableSignal<T>(
     private val subscribed = AtomicBoolean(false)
 
     // Glitch-free infrastructure
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
-    private val flag = AtomicReference(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
+    private val flag = AtomicReference(SignalFlag.DIRTY)
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
     private val cachedValue = AtomicReference<T?>(null)
     private val lastSourceVersion = AtomicLong(-1L)
     private val lastNotifiedVersion = AtomicLong(-1L)
 
-    private val listenerEffect = object : io.github.fenrur.signal.impl.EffectNode {
+    private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
         override fun execute() {
@@ -65,7 +65,7 @@ class DefaultBindableSignal<T>(
                     val currentValue = validateAndGetTyped()
                     val currentVersion = _version.load()
                     if (lastNotifiedVersion.exchange(currentVersion) != currentVersion) {
-                        io.github.fenrur.signal.impl.notifyAllValue(listeners, currentValue)
+                        notifyAllValue(listeners, currentValue)
                     }
                 }
             }
@@ -78,26 +78,26 @@ class DefaultBindableSignal<T>(
         }
     }
 
-    private fun getSourceVersion(signal: io.github.fenrur.signal.Signal<*>): Long = when (signal) {
-        is io.github.fenrur.signal.impl.SourceSignalNode -> signal.version
-        is io.github.fenrur.signal.impl.ComputedSignalNode -> {
+    private fun getSourceVersion(signal: Signal<*>): Long = when (signal) {
+        is SourceSignalNode -> signal.version
+        is ComputedSignalNode -> {
             signal.validateAndGet()
             signal.version
         }
-        else -> io.github.fenrur.signal.impl.SignalGraph.globalVersion.load()
+        else -> SignalGraph.globalVersion.load()
     }
 
-    private fun registerAsTarget(signal: io.github.fenrur.signal.Signal<*>) {
+    private fun registerAsTarget(signal: Signal<*>) {
         when (signal) {
-            is io.github.fenrur.signal.impl.SourceSignalNode -> signal.addTarget(this)
-            is io.github.fenrur.signal.impl.ComputedSignalNode -> signal.addTarget(this)
+            is SourceSignalNode -> signal.addTarget(this)
+            is ComputedSignalNode -> signal.addTarget(this)
         }
     }
 
-    private fun unregisterAsTarget(signal: io.github.fenrur.signal.Signal<*>) {
+    private fun unregisterAsTarget(signal: Signal<*>) {
         when (signal) {
-            is io.github.fenrur.signal.impl.SourceSignalNode -> signal.removeTarget(this)
-            is io.github.fenrur.signal.impl.ComputedSignalNode -> signal.removeTarget(this)
+            is SourceSignalNode -> signal.removeTarget(this)
+            is ComputedSignalNode -> signal.removeTarget(this)
         }
     }
 
@@ -134,24 +134,24 @@ class DefaultBindableSignal<T>(
             ?: throw IllegalStateException("BindableSignal is not bound")
 
         when (flag.load()) {
-            io.github.fenrur.signal.impl.SignalFlag.CLEAN -> {
+            SignalFlag.CLEAN -> {
                 val sourceVersion = getSourceVersion(data.signal)
                 if (sourceVersion == lastSourceVersion.load()) {
                     @Suppress("UNCHECKED_CAST")
                     return cachedValue.load() as T
                 }
             }
-            io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY -> {
+            SignalFlag.MAYBE_DIRTY -> {
                 val sourceVersion = getSourceVersion(data.signal)
                 if (sourceVersion != lastSourceVersion.load()) {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+                    flag.store(SignalFlag.DIRTY)
                 } else {
-                    flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+                    flag.store(SignalFlag.CLEAN)
                     @Suppress("UNCHECKED_CAST")
                     return cachedValue.load() as T
                 }
             }
-            io.github.fenrur.signal.impl.SignalFlag.DIRTY -> {}
+            SignalFlag.DIRTY -> {}
         }
 
         // Recompute
@@ -165,7 +165,7 @@ class DefaultBindableSignal<T>(
             _version.incrementAndFetch()
         }
 
-        flag.store(io.github.fenrur.signal.impl.SignalFlag.CLEAN)
+        flag.store(SignalFlag.CLEAN)
         return newValue
     }
 
@@ -178,31 +178,31 @@ class DefaultBindableSignal<T>(
     override fun validateAndGet(): Any? = validateAndGetTyped()
 
     override fun markDirty() {
-        if (flag.exchange(io.github.fenrur.signal.impl.SignalFlag.DIRTY) == io.github.fenrur.signal.impl.SignalFlag.CLEAN) {
+        if (flag.exchange(SignalFlag.DIRTY) == SignalFlag.CLEAN) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
     override fun markMaybeDirty() {
         // Use CAS to atomically transition CLEAN -> MAYBE_DIRTY
-        if (flag.compareAndSet(io.github.fenrur.signal.impl.SignalFlag.CLEAN, io.github.fenrur.signal.impl.SignalFlag.MAYBE_DIRTY)) {
+        if (flag.compareAndSet(SignalFlag.CLEAN, SignalFlag.MAYBE_DIRTY)) {
             targets.forEach { it.markMaybeDirty() }
-            if (listeners.isNotEmpty()) io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+            if (listeners.isNotEmpty()) SignalGraph.scheduleEffect(listenerEffect)
         }
     }
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
         ensureSubscribed()
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
         maybeUnsubscribe()
     }
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (isClosed) return {}
         ensureSubscribed()
         listener(Result.success(value))
@@ -237,18 +237,18 @@ class DefaultBindableSignal<T>(
         }
     }
 
-    private fun bindToInternal(newSignal: io.github.fenrur.signal.Signal<T>, notifyListeners: Boolean) {
+    private fun bindToInternal(newSignal: Signal<T>, notifyListeners: Boolean) {
         if (isClosed) return
 
         // Phase 1: Pre-check for cycles (fast path rejection)
-        if (io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
+        if (BindableSignal.wouldCreateCycle(this, newSignal)) {
             throw IllegalStateException("Circular binding detected: binding would create a cycle")
         }
 
         // Subscribe for error propagation
         val unSub = newSignal.subscribe { result ->
             if (isClosed) return@subscribe
-            result.onFailure { ex -> io.github.fenrur.signal.impl.notifyAllError(listeners, ex) }
+            result.onFailure { ex -> notifyAllError(listeners, ex) }
         }
 
         // Phase 2: Atomic bind
@@ -256,7 +256,7 @@ class DefaultBindableSignal<T>(
 
         // Phase 3: Post-check for cycles (detect concurrent binding race)
         // Another thread might have bound in a way that now creates a cycle
-        if (io.github.fenrur.signal.BindableSignal.wouldCreateCycle(this, newSignal)) {
+        if (BindableSignal.wouldCreateCycle(this, newSignal)) {
             // Phase 4: Rollback - restore old binding
             bindingData.store(oldData)
             try {
@@ -289,30 +289,30 @@ class DefaultBindableSignal<T>(
         }
 
         // Mark dirty and trigger update
-        flag.store(io.github.fenrur.signal.impl.SignalFlag.DIRTY)
+        flag.store(SignalFlag.DIRTY)
         _version.incrementAndFetch()
-        io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+        SignalGraph.incrementGlobalVersion()
 
         if (notifyListeners) {
-            io.github.fenrur.signal.impl.SignalGraph.startBatch()
+            SignalGraph.startBatch()
             try {
                 for (target in targets) {
                     target.markDirty()
                 }
                 if (listeners.isNotEmpty()) {
-                    io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                    SignalGraph.scheduleEffect(listenerEffect)
                 }
             } finally {
-                io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                SignalGraph.endBatch()
             }
         }
     }
 
-    override fun bindTo(newSignal: io.github.fenrur.signal.Signal<T>) {
+    override fun bindTo(newSignal: Signal<T>) {
         bindToInternal(newSignal, notifyListeners = true)
     }
 
-    override fun currentSignal(): io.github.fenrur.signal.Signal<T>? = bindingData.load()?.signal
+    override fun currentSignal(): Signal<T>? = bindingData.load()?.signal
 
     override fun isBound(): Boolean = bindingData.load() != null
 

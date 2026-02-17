@@ -92,7 +92,7 @@ class ExtensionsTest {
 
     @Test
     fun `map transforms signal value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
 
         assertEquals(20, mapped.value)
@@ -100,7 +100,7 @@ class ExtensionsTest {
 
     @Test
     fun `map updates when source changes`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.map { it * 2 }
 
         source.value = 20
@@ -110,7 +110,7 @@ class ExtensionsTest {
 
     @Test
     fun `map can change type`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val source = DefaultMutableSignal(42)
         val mapped = source.map { "Value: $it" }
 
         assertEquals("Value: 42", mapped.value)
@@ -120,7 +120,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapToString converts to string`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val source = DefaultMutableSignal(42)
         val mapped = source.mapToString()
 
         assertEquals("42", mapped.value)
@@ -129,7 +129,7 @@ class ExtensionsTest {
     @Test
     fun `mapToString works with complex objects`() {
         data class Person(val name: String)
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person("John"))
+        val source = DefaultMutableSignal(Person("John"))
         val mapped = source.mapToString()
 
         assertEquals("Person(name=John)", mapped.value)
@@ -139,7 +139,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull filters out null values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         assertEquals(20, mapped.value)
@@ -147,7 +147,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull retains last non-null value when transform returns null`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
 
         source.value = 3 // Transform returns null
@@ -159,7 +159,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull throws if initial value transforms to null`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
+        val source = DefaultMutableSignal(3)
 
         assertFailsWith<IllegalStateException> {
             source.mapNotNull { if (it > 5) it * 2 else null }
@@ -168,7 +168,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapNotNull notifies only for non-null values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val mapped = source.mapNotNull { if (it > 5) it * 2 else null }
         val values = mutableListOf<Int>()
 
@@ -186,7 +186,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap reads with forward transform`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("42")
+        val source = mutableSignalOf("42")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -197,7 +197,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap writes with reverse transform`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("42")
+        val source = mutableSignalOf("42")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -210,7 +210,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap update applies both transforms`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("10")
+        val source = mutableSignalOf("10")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -223,7 +223,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap notifies subscribers on source change`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("1")
+        val source = mutableSignalOf("1")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -240,7 +240,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap notifies subscribers on mapped write`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("1")
+        val source = mutableSignalOf("1")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -257,7 +257,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap close stops notifications`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("1")
+        val source = mutableSignalOf("1")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -275,7 +275,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap write on closed signal does nothing`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("1")
+        val source = mutableSignalOf("1")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -289,7 +289,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap update on closed signal does nothing`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("1")
+        val source = mutableSignalOf("1")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -303,7 +303,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap can be used as property delegate`() {
-        val source = io.github.fenrur.signal.mutableSignalOf("5")
+        val source = mutableSignalOf("5")
         val mapped = source.bimap(
             forward = { it.toInt() },
             reverse = { it.toString() }
@@ -318,7 +318,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap chaining works`() {
-        val source = io.github.fenrur.signal.mutableSignalOf(10)
+        val source = mutableSignalOf(10)
         val doubled = source.bimap(
             forward = { it * 2 },
             reverse = { it / 2 }
@@ -337,7 +337,7 @@ class ExtensionsTest {
 
     @Test
     fun `bimap with identity transforms is pass-through`() {
-        val source = io.github.fenrur.signal.mutableSignalOf(42)
+        val source = mutableSignalOf(42)
         val identity = source.bimap(
             forward = { it },
             reverse = { it }
@@ -352,7 +352,7 @@ class ExtensionsTest {
 
     @Test
     fun `scan accumulates values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         // scan applies accumulator(initial, source.value) once at construction
         // With lazy subscription, accumulator only runs again when subscribed AND source changes
         val accumulated = source.scan(0) { acc, value -> acc + value }
@@ -372,7 +372,7 @@ class ExtensionsTest {
 
     @Test
     fun `scan can change type`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val accumulated = source.scan("") { acc, value -> "$acc$value" }
 
         // Initial: "" + "1" = "1"
@@ -389,7 +389,7 @@ class ExtensionsTest {
 
     @Test
     fun `runningReduce accumulates from initial value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val reduced = source.runningReduce { acc, value -> acc + value }
 
         // runningReduce uses scan(value, accumulator)
@@ -407,7 +407,7 @@ class ExtensionsTest {
 
     @Test
     fun `pairwise emits pairs of consecutive values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val pairs = source.pairwise()
 
         // Initial pair is (initial, initial)
@@ -427,10 +427,10 @@ class ExtensionsTest {
 
     @Test
     fun `flatten flattens nested signals`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(20)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner1 as io.github.fenrur.signal.Signal<Int>)
+            DefaultMutableSignal(inner1 as Signal<Int>)
         val flattened = outer.flatten()
 
         assertEquals(10, flattened.value)
@@ -441,9 +441,9 @@ class ExtensionsTest {
 
     @Test
     fun `flatten updates when inner signal changes`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
+            DefaultMutableSignal(inner as Signal<Int>)
         val flattened = outer.flatten()
 
         inner.value = 30
@@ -454,8 +454,8 @@ class ExtensionsTest {
 
     @Test
     fun `flatMap maps and flattens`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val flattened = source.flatMap { io.github.fenrur.signal.impl.DefaultMutableSignal(it * 10) }
+        val source = DefaultMutableSignal(1)
+        val flattened = source.flatMap { DefaultMutableSignal(it * 10) }
 
         assertEquals(10, flattened.value)
 
@@ -465,8 +465,8 @@ class ExtensionsTest {
 
     @Test
     fun `switchMap is alias for flatMap`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val switched = source.switchMap { io.github.fenrur.signal.impl.DefaultMutableSignal(it * 10) }
+        val source = DefaultMutableSignal(1)
+        val switched = source.switchMap { DefaultMutableSignal(it * 10) }
 
         assertEquals(10, switched.value)
     }
@@ -479,7 +479,7 @@ class ExtensionsTest {
 
     @Test
     fun `filter keeps matching values`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val filtered = source.filter { it > 5 }
 
         assertEquals(10, filtered.value)
@@ -487,7 +487,7 @@ class ExtensionsTest {
 
     @Test
     fun `filter retains last matching value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val filtered = source.filter { it > 5 }
 
         source.value = 3 // doesn't match
@@ -501,7 +501,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterNotNull filters out nulls`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(10)
+        val source = DefaultMutableSignal<Int?>(10)
         val filtered = source.filterNotNull()
 
         assertEquals(10, filtered.value)
@@ -517,7 +517,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterIsInstance filters by type`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Any>("hello")
+        val source = DefaultMutableSignal<Any>("hello")
         val filtered = source.filterIsInstance<String>()
 
         assertEquals("hello", filtered.value)
@@ -534,7 +534,7 @@ class ExtensionsTest {
     @Test
     fun `distinctUntilChangedBy only emits when key changes`() {
         data class Person(val id: Int, val name: String)
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Person(1, "John"))
+        val source = DefaultMutableSignal(Person(1, "John"))
         val distinct = source.distinctUntilChangedBy { it.id }
         val values = mutableListOf<Person>()
 
@@ -551,7 +551,7 @@ class ExtensionsTest {
 
     @Test
     fun `distinctUntilChanged is a no-op`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val distinct = source.distinctUntilChanged()
 
         assertSame(source, distinct)
@@ -565,43 +565,43 @@ class ExtensionsTest {
 
     @Test
     fun `combine2 combines two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val combined = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val combined = combine(a, b) { x, y -> x + y }
 
         assertEquals(30, combined.value)
     }
 
     @Test
     fun `combine3 combines three signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val combined = io.github.fenrur.signal.operators.combine(a, b, c) { x, y, z -> x + y + z }
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val combined = combine(a, b, c) { x, y, z -> x + y + z }
 
         assertEquals(6, combined.value)
     }
 
     @Test
     fun `combine4 combines four signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
         val combined =
-            io.github.fenrur.signal.operators.combine(a, b, c, d) { w, x, y, z -> w + x + y + z }
+            combine(a, b, c, d) { w, x, y, z -> w + x + y + z }
 
         assertEquals(10, combined.value)
     }
 
     @Test
     fun `combine5 combines five signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val combined = io.github.fenrur.signal.operators.combine(
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val combined = combine(
             a,
             b,
             c,
@@ -614,13 +614,13 @@ class ExtensionsTest {
 
     @Test
     fun `combine6 combines six signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val f = io.github.fenrur.signal.impl.DefaultMutableSignal(6)
-        val combined = io.github.fenrur.signal.operators.combine(
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val d = DefaultMutableSignal(4)
+        val e = DefaultMutableSignal(5)
+        val f = DefaultMutableSignal(6)
+        val combined = combine(
             a,
             b,
             c,
@@ -636,18 +636,18 @@ class ExtensionsTest {
 
     @Test
     fun `zip combines two signals into pair`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
-        val zipped = io.github.fenrur.signal.operators.zip(a, b)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal("hello")
+        val zipped = zip(a, b)
 
         assertEquals(10 to "hello", zipped.value)
     }
 
     @Test
     fun `zip updates when either signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
-        val zipped = io.github.fenrur.signal.operators.zip(a, b)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal("hello")
+        val zipped = zip(a, b)
 
         a.value = 20
         assertEquals(20 to "hello", zipped.value)
@@ -658,56 +658,56 @@ class ExtensionsTest {
 
     @Test
     fun `zip3 combines three signals into triple`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("two")
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3.0)
-        val zipped = io.github.fenrur.signal.operators.zip(a, b, c)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val zipped = zip(a, b, c)
 
         assertEquals(Triple(1, "two", 3.0), zipped.value)
     }
 
     @Test
     fun `zip4 combines four signals into Tuple4`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("two")
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3.0)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val zipped = io.github.fenrur.signal.operators.zip(a, b, c, d)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val zipped = zip(a, b, c, d)
 
-        assertEquals(io.github.fenrur.signal.operators.Tuple4(1, "two", 3.0, true), zipped.value)
+        assertEquals(Tuple4(1, "two", 3.0, true), zipped.value)
     }
 
     @Test
     fun `zip5 combines five signals into Tuple5`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("two")
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3.0)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal('x')
-        val zipped = io.github.fenrur.signal.operators.zip(a, b, c, d, e)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val e = DefaultMutableSignal('x')
+        val zipped = zip(a, b, c, d, e)
 
-        assertEquals(io.github.fenrur.signal.operators.Tuple5(1, "two", 3.0, true, 'x'), zipped.value)
+        assertEquals(Tuple5(1, "two", 3.0, true, 'x'), zipped.value)
     }
 
     @Test
     fun `zip6 combines six signals into Tuple6`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("two")
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3.0)
-        val d = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val e = io.github.fenrur.signal.impl.DefaultMutableSignal('x')
-        val f = io.github.fenrur.signal.impl.DefaultMutableSignal(100L)
-        val zipped = io.github.fenrur.signal.operators.zip(a, b, c, d, e, f)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal("two")
+        val c = DefaultMutableSignal(3.0)
+        val d = DefaultMutableSignal(true)
+        val e = DefaultMutableSignal('x')
+        val f = DefaultMutableSignal(100L)
+        val zipped = zip(a, b, c, d, e, f)
 
-        assertEquals(io.github.fenrur.signal.operators.Tuple6(1, "two", 3.0, true, 'x', 100L), zipped.value)
+        assertEquals(Tuple6(1, "two", 3.0, true, 'x', 100L), zipped.value)
     }
 
     // ==================== withLatestFrom ====================
 
     @Test
     fun `withLatestFrom combines with latest from other`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
 
         assertEquals(110, combined.value)
@@ -715,8 +715,8 @@ class ExtensionsTest {
 
     @Test
     fun `withLatestFrom only emits when source changes`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal(100)
         val combined = source.withLatestFrom(other) { a, b -> a + b }
         val values = mutableListOf<Int>()
 
@@ -732,8 +732,8 @@ class ExtensionsTest {
 
     @Test
     fun `withLatestFrom into pair`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val other = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal(10)
+        val other = DefaultMutableSignal("hello")
         val combined = source.withLatestFrom(other)
 
         assertEquals(10 to "hello", combined.value)
@@ -743,25 +743,25 @@ class ExtensionsTest {
 
     @Test
     fun `combineAll combines multiple signals into list`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val combined = io.github.fenrur.signal.operators.combineAll(a, b, c)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val c = DefaultMutableSignal(3)
+        val combined = combineAll(a, b, c)
 
         assertEquals(listOf(1, 2, 3), combined.value)
     }
 
     @Test
     fun `combineAll with empty returns empty list`() {
-        val combined = io.github.fenrur.signal.operators.combineAll<Int>()
+        val combined = combineAll<Int>()
         assertTrue(combined.value.isEmpty())
     }
 
     @Test
     fun `combineAll updates when any signal changes`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
-        val combined = io.github.fenrur.signal.operators.combineAll(a, b)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(2)
+        val combined = combineAll(a, b)
 
         a.value = 10
         assertEquals(listOf(10, 2), combined.value)
@@ -770,9 +770,9 @@ class ExtensionsTest {
     @Test
     fun `list combineAll extension`() {
         val signals = listOf(
-            io.github.fenrur.signal.impl.DefaultMutableSignal(1),
-            io.github.fenrur.signal.impl.DefaultMutableSignal(2),
-            io.github.fenrur.signal.impl.DefaultMutableSignal(3)
+            DefaultMutableSignal(1),
+            DefaultMutableSignal(2),
+            DefaultMutableSignal(3)
         )
         val combined = signals.combineAll()
 
@@ -787,7 +787,7 @@ class ExtensionsTest {
 
     @Test
     fun `not negates boolean signal`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
+        val source = DefaultMutableSignal(true)
         val negated = source.not()
 
         assertFalse(negated.value)
@@ -795,7 +795,7 @@ class ExtensionsTest {
 
     @Test
     fun `not updates when source changes`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
+        val source = DefaultMutableSignal(true)
         val negated = source.not()
 
         source.value = false
@@ -807,8 +807,8 @@ class ExtensionsTest {
 
     @Test
     fun `and combines two boolean signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
         val result = a.and(b)
 
         assertTrue(result.value)
@@ -821,8 +821,8 @@ class ExtensionsTest {
 
     @Test
     fun `or combines two boolean signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
         val result = a.or(b)
 
         assertFalse(result.value)
@@ -835,8 +835,8 @@ class ExtensionsTest {
 
     @Test
     fun `xor combines two boolean signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
         val result = a.xor(b)
 
         assertFalse(result.value)
@@ -849,10 +849,10 @@ class ExtensionsTest {
 
     @Test
     fun `allOf returns true if all signals are true`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(true)
-        val result = io.github.fenrur.signal.operators.allOf(a, b, c)
+        val a = DefaultMutableSignal(true)
+        val b = DefaultMutableSignal(true)
+        val c = DefaultMutableSignal(true)
+        val result = allOf(a, b, c)
 
         assertTrue(result.value)
 
@@ -864,10 +864,10 @@ class ExtensionsTest {
 
     @Test
     fun `anyOf returns true if any signal is true`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val result = io.github.fenrur.signal.operators.anyOf(a, b, c)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
+        val c = DefaultMutableSignal(false)
+        val result = anyOf(a, b, c)
 
         assertFalse(result.value)
 
@@ -879,9 +879,9 @@ class ExtensionsTest {
 
     @Test
     fun `noneOf returns true if no signal is true`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(false)
-        val result = io.github.fenrur.signal.operators.noneOf(a, b)
+        val a = DefaultMutableSignal(false)
+        val b = DefaultMutableSignal(false)
+        val result = noneOf(a, b)
 
         assertTrue(result.value)
 
@@ -897,8 +897,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Int adds two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val result = a + b
 
         assertEquals(30, result.value)
@@ -906,8 +906,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Long adds two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(20L)
         val result = a + b
 
         assertEquals(30L, result.value)
@@ -915,8 +915,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Double adds two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10.5)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20.5)
+        val a = DefaultMutableSignal(10.5)
+        val b = DefaultMutableSignal(20.5)
         val result = a + b
 
         assertEquals(31.0, result.value)
@@ -924,8 +924,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus Float adds two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10.5f)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20.5f)
+        val a = DefaultMutableSignal(10.5f)
+        val b = DefaultMutableSignal(20.5f)
         val result = a + b
 
         assertEquals(31.0f, result.value)
@@ -935,8 +935,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Int subtracts two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(30)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val a = DefaultMutableSignal(30)
+        val b = DefaultMutableSignal(10)
         val result = a - b
 
         assertEquals(20, result.value)
@@ -944,8 +944,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Long subtracts two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(30L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
+        val a = DefaultMutableSignal(30L)
+        val b = DefaultMutableSignal(10L)
         val result = a - b
 
         assertEquals(20L, result.value)
@@ -953,8 +953,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Double subtracts two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(30.5)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10.5)
+        val a = DefaultMutableSignal(30.5)
+        val b = DefaultMutableSignal(10.5)
         val result = a - b
 
         assertEquals(20.0, result.value)
@@ -962,8 +962,8 @@ class ExtensionsTest {
 
     @Test
     fun `minus Float subtracts two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(30.5f)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10.5f)
+        val a = DefaultMutableSignal(30.5f)
+        val b = DefaultMutableSignal(10.5f)
         val result = a - b
 
         assertEquals(20.0f, result.value)
@@ -973,8 +973,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Int multiplies two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
+        val a = DefaultMutableSignal(5)
+        val b = DefaultMutableSignal(4)
         val result = a * b
 
         assertEquals(20, result.value)
@@ -982,8 +982,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Long multiplies two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(5L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4L)
+        val a = DefaultMutableSignal(5L)
+        val b = DefaultMutableSignal(4L)
         val result = a * b
 
         assertEquals(20L, result.value)
@@ -991,8 +991,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Double multiplies two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(2.5)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4.0)
+        val a = DefaultMutableSignal(2.5)
+        val b = DefaultMutableSignal(4.0)
         val result = a * b
 
         assertEquals(10.0, result.value)
@@ -1000,8 +1000,8 @@ class ExtensionsTest {
 
     @Test
     fun `times Float multiplies two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(2.5f)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4.0f)
+        val a = DefaultMutableSignal(2.5f)
+        val b = DefaultMutableSignal(4.0f)
         val result = a * b
 
         assertEquals(10.0f, result.value)
@@ -1011,8 +1011,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Int divides two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4)
+        val a = DefaultMutableSignal(20)
+        val b = DefaultMutableSignal(4)
         val result = a / b
 
         assertEquals(5, result.value)
@@ -1020,8 +1020,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Long divides two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(20L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4L)
+        val a = DefaultMutableSignal(20L)
+        val b = DefaultMutableSignal(4L)
         val result = a / b
 
         assertEquals(5L, result.value)
@@ -1029,8 +1029,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Double divides two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4.0)
+        val a = DefaultMutableSignal(10.0)
+        val b = DefaultMutableSignal(4.0)
         val result = a / b
 
         assertEquals(2.5, result.value)
@@ -1038,8 +1038,8 @@ class ExtensionsTest {
 
     @Test
     fun `div Float divides two signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0f)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(4.0f)
+        val a = DefaultMutableSignal(10.0f)
+        val b = DefaultMutableSignal(4.0f)
         val result = a / b
 
         assertEquals(2.5f, result.value)
@@ -1049,8 +1049,8 @@ class ExtensionsTest {
 
     @Test
     fun `rem Int computes remainder`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(3)
         val result = a % b
 
         assertEquals(1, result.value)
@@ -1058,8 +1058,8 @@ class ExtensionsTest {
 
     @Test
     fun `rem Long computes remainder`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(3L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(3L)
         val result = a % b
 
         assertEquals(1L, result.value)
@@ -1069,9 +1069,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Int clamps value to range`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val value = DefaultMutableSignal(15)
+        val min = DefaultMutableSignal(0)
+        val max = DefaultMutableSignal(10)
         val result = value.coerceIn(min, max)
 
         assertEquals(10, result.value)
@@ -1085,9 +1085,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Long clamps value to range`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15L)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(0L)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
+        val value = DefaultMutableSignal(15L)
+        val min = DefaultMutableSignal(0L)
+        val max = DefaultMutableSignal(10L)
         val result = value.coerceIn(min, max)
 
         assertEquals(10L, result.value)
@@ -1095,9 +1095,9 @@ class ExtensionsTest {
 
     @Test
     fun `coerceIn Double clamps value to range`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15.0)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(0.0)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0)
+        val value = DefaultMutableSignal(15.0)
+        val min = DefaultMutableSignal(0.0)
+        val max = DefaultMutableSignal(10.0)
         val result = value.coerceIn(min, max)
 
         assertEquals(10.0, result.value)
@@ -1107,8 +1107,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Int with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val value = DefaultMutableSignal(5)
+        val min = DefaultMutableSignal(10)
         val result = value.coerceAtLeast(min)
 
         assertEquals(10, result.value)
@@ -1119,7 +1119,7 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Int with constant`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val value = DefaultMutableSignal(5)
         val result = value.coerceAtLeast(10)
 
         assertEquals(10, result.value)
@@ -1130,8 +1130,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Long with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(5L)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
+        val value = DefaultMutableSignal(5L)
+        val min = DefaultMutableSignal(10L)
         val result = value.coerceAtLeast(min)
 
         assertEquals(10L, result.value)
@@ -1139,8 +1139,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtLeast Double with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(5.0)
-        val min = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0)
+        val value = DefaultMutableSignal(5.0)
+        val min = DefaultMutableSignal(10.0)
         val result = value.coerceAtLeast(min)
 
         assertEquals(10.0, result.value)
@@ -1150,8 +1150,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Int with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val value = DefaultMutableSignal(15)
+        val max = DefaultMutableSignal(10)
         val result = value.coerceAtMost(max)
 
         assertEquals(10, result.value)
@@ -1162,7 +1162,7 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Int with constant`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15)
+        val value = DefaultMutableSignal(15)
         val result = value.coerceAtMost(10)
 
         assertEquals(10, result.value)
@@ -1170,8 +1170,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Long with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15L)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
+        val value = DefaultMutableSignal(15L)
+        val max = DefaultMutableSignal(10L)
         val result = value.coerceAtMost(max)
 
         assertEquals(10L, result.value)
@@ -1179,8 +1179,8 @@ class ExtensionsTest {
 
     @Test
     fun `coerceAtMost Double with signal`() {
-        val value = io.github.fenrur.signal.impl.DefaultMutableSignal(15.0)
-        val max = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0)
+        val value = DefaultMutableSignal(15.0)
+        val max = DefaultMutableSignal(10.0)
         val result = value.coerceAtMost(max)
 
         assertEquals(10.0, result.value)
@@ -1194,8 +1194,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Int compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(5)
         val result = a gt b
 
         assertTrue(result.value)
@@ -1206,8 +1206,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Long compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5L)
+        val a = DefaultMutableSignal(10L)
+        val b = DefaultMutableSignal(5L)
         val result = a gt b
 
         assertTrue(result.value)
@@ -1215,8 +1215,8 @@ class ExtensionsTest {
 
     @Test
     fun `gt Double compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10.0)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5.0)
+        val a = DefaultMutableSignal(10.0)
+        val b = DefaultMutableSignal(5.0)
         val result = a gt b
 
         assertTrue(result.value)
@@ -1226,8 +1226,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Int compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(3)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val a = DefaultMutableSignal(3)
+        val b = DefaultMutableSignal(5)
         val result = a lt b
 
         assertTrue(result.value)
@@ -1238,8 +1238,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Long compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(3L)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5L)
+        val a = DefaultMutableSignal(3L)
+        val b = DefaultMutableSignal(5L)
         val result = a lt b
 
         assertTrue(result.value)
@@ -1247,8 +1247,8 @@ class ExtensionsTest {
 
     @Test
     fun `lt Double compares signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(3.0)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(5.0)
+        val a = DefaultMutableSignal(3.0)
+        val b = DefaultMutableSignal(5.0)
         val result = a lt b
 
         assertTrue(result.value)
@@ -1258,8 +1258,8 @@ class ExtensionsTest {
 
     @Test
     fun `eq compares signals for equality`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(10)
         val result = a eq b
 
         assertTrue(result.value)
@@ -1270,8 +1270,8 @@ class ExtensionsTest {
 
     @Test
     fun `eq works with strings`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val a = DefaultMutableSignal("hello")
+        val b = DefaultMutableSignal("hello")
         val result = a eq b
 
         assertTrue(result.value)
@@ -1281,8 +1281,8 @@ class ExtensionsTest {
 
     @Test
     fun `neq compares signals for inequality`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
         val result = a neq b
 
         assertTrue(result.value)
@@ -1299,8 +1299,8 @@ class ExtensionsTest {
 
     @Test
     fun `plus String concatenates signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal("Hello")
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(" World")
+        val a = DefaultMutableSignal("Hello")
+        val b = DefaultMutableSignal(" World")
         val result = a + b
 
         assertEquals("Hello World", result.value)
@@ -1310,7 +1310,7 @@ class ExtensionsTest {
 
     @Test
     fun `isEmpty String returns true for empty`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("")
+        val source = DefaultMutableSignal("")
         val result = source.isEmpty()
 
         assertTrue(result.value)
@@ -1323,7 +1323,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotEmpty String returns true for non-empty`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.isNotEmpty()
 
         assertTrue(result.value)
@@ -1336,7 +1336,7 @@ class ExtensionsTest {
 
     @Test
     fun `isBlank returns true for blank strings`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("   ")
+        val source = DefaultMutableSignal("   ")
         val result = source.isBlank()
 
         assertTrue(result.value)
@@ -1349,7 +1349,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotBlank returns true for non-blank strings`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.isNotBlank()
 
         assertTrue(result.value)
@@ -1362,7 +1362,7 @@ class ExtensionsTest {
 
     @Test
     fun `length returns string length`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.length()
 
         assertEquals(5, result.value)
@@ -1375,7 +1375,7 @@ class ExtensionsTest {
 
     @Test
     fun `trim removes whitespace`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("  hello  ")
+        val source = DefaultMutableSignal("  hello  ")
         val result = source.trim()
 
         assertEquals("hello", result.value)
@@ -1385,7 +1385,7 @@ class ExtensionsTest {
 
     @Test
     fun `uppercase converts to uppercase`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("hello")
+        val source = DefaultMutableSignal("hello")
         val result = source.uppercase()
 
         assertEquals("HELLO", result.value)
@@ -1395,7 +1395,7 @@ class ExtensionsTest {
 
     @Test
     fun `lowercase converts to lowercase`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal("HELLO")
+        val source = DefaultMutableSignal("HELLO")
         val result = source.lowercase()
 
         assertEquals("hello", result.value)
@@ -1409,7 +1409,7 @@ class ExtensionsTest {
 
     @Test
     fun `size returns list size`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.size()
 
         assertEquals(3, result.value)
@@ -1422,7 +1422,7 @@ class ExtensionsTest {
 
     @Test
     fun `isEmpty List returns true for empty list`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.isEmpty()
 
         assertTrue(result.value)
@@ -1435,7 +1435,7 @@ class ExtensionsTest {
 
     @Test
     fun `isNotEmpty List returns true for non-empty list`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2))
+        val source = DefaultMutableSignal(listOf(1, 2))
         val result = source.isNotEmpty()
 
         assertTrue(result.value)
@@ -1448,7 +1448,7 @@ class ExtensionsTest {
 
     @Test
     fun `firstOrNull returns first element`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.firstOrNull()
 
         assertEquals(1, result.value)
@@ -1456,7 +1456,7 @@ class ExtensionsTest {
 
     @Test
     fun `firstOrNull returns null for empty list`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.firstOrNull()
 
         assertNull(result.value)
@@ -1466,7 +1466,7 @@ class ExtensionsTest {
 
     @Test
     fun `lastOrNull returns last element`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.lastOrNull()
 
         assertEquals(3, result.value)
@@ -1474,7 +1474,7 @@ class ExtensionsTest {
 
     @Test
     fun `lastOrNull returns null for empty list`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(emptyList<Int>())
+        val source = DefaultMutableSignal(emptyList<Int>())
         val result = source.lastOrNull()
 
         assertNull(result.value)
@@ -1484,7 +1484,7 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull returns element at index`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(10, 20, 30))
+        val source = DefaultMutableSignal(listOf(10, 20, 30))
         val result = source.getOrNull(1)
 
         assertEquals(20, result.value)
@@ -1492,7 +1492,7 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull returns null for out of bounds`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(10, 20))
+        val source = DefaultMutableSignal(listOf(10, 20))
         val result = source.getOrNull(5)
 
         assertNull(result.value)
@@ -1500,8 +1500,8 @@ class ExtensionsTest {
 
     @Test
     fun `getOrNull with signal index`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(10, 20, 30))
-        val index = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val source = DefaultMutableSignal(listOf(10, 20, 30))
+        val index = DefaultMutableSignal(2)
         val result = source.getOrNull(index)
 
         assertEquals(30, result.value)
@@ -1514,7 +1514,7 @@ class ExtensionsTest {
 
     @Test
     fun `contains checks element presence`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.contains(2)
 
         assertTrue(result.value)
@@ -1522,7 +1522,7 @@ class ExtensionsTest {
 
     @Test
     fun `contains returns false for missing element`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.contains(5)
 
         assertFalse(result.value)
@@ -1530,8 +1530,8 @@ class ExtensionsTest {
 
     @Test
     fun `contains with signal element`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
-        val element = io.github.fenrur.signal.impl.DefaultMutableSignal(2)
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
+        val element = DefaultMutableSignal(2)
         val result = source.contains(element)
 
         assertTrue(result.value)
@@ -1544,7 +1544,7 @@ class ExtensionsTest {
 
     @Test
     fun `filterList filters list elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.filterList { it > 2 }
 
         assertEquals(listOf(3, 4, 5), result.value)
@@ -1554,7 +1554,7 @@ class ExtensionsTest {
 
     @Test
     fun `mapList transforms list elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.mapList { it * 2 }
 
         assertEquals(listOf(2, 4, 6), result.value)
@@ -1564,7 +1564,7 @@ class ExtensionsTest {
 
     @Test
     fun `flatMapList flatMaps list elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2))
+        val source = DefaultMutableSignal(listOf(1, 2))
         val result = source.flatMapList { listOf(it, it * 10) }
 
         assertEquals(listOf(1, 10, 2, 20), result.value)
@@ -1574,7 +1574,7 @@ class ExtensionsTest {
 
     @Test
     fun `sorted sorts list ascending`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
+        val source = DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
         val result = source.sorted()
 
         assertEquals(listOf(1, 1, 3, 4, 5), result.value)
@@ -1584,7 +1584,7 @@ class ExtensionsTest {
 
     @Test
     fun `sortedDescending sorts list descending`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
+        val source = DefaultMutableSignal(listOf(3, 1, 4, 1, 5))
         val result = source.sortedDescending()
 
         assertEquals(listOf(5, 4, 3, 1, 1), result.value)
@@ -1595,7 +1595,7 @@ class ExtensionsTest {
     @Test
     fun `sortedBy sorts by selector`() {
         data class Person(val name: String, val age: Int)
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(
+        val source = DefaultMutableSignal(
             listOf(
                 Person("Bob", 30),
                 Person("Alice", 25),
@@ -1611,7 +1611,7 @@ class ExtensionsTest {
 
     @Test
     fun `reversed reverses list`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.reversed()
 
         assertEquals(listOf(3, 2, 1), result.value)
@@ -1621,7 +1621,7 @@ class ExtensionsTest {
 
     @Test
     fun `take returns first n elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.take(3)
 
         assertEquals(listOf(1, 2, 3), result.value)
@@ -1631,7 +1631,7 @@ class ExtensionsTest {
 
     @Test
     fun `drop removes first n elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
+        val source = DefaultMutableSignal(listOf(1, 2, 3, 4, 5))
         val result = source.drop(2)
 
         assertEquals(listOf(3, 4, 5), result.value)
@@ -1641,7 +1641,7 @@ class ExtensionsTest {
 
     @Test
     fun `distinct removes duplicates`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 2, 3, 1))
+        val source = DefaultMutableSignal(listOf(1, 2, 2, 3, 1))
         val result = source.distinct()
 
         assertEquals(listOf(1, 2, 3), result.value)
@@ -1651,7 +1651,7 @@ class ExtensionsTest {
 
     @Test
     fun `joinToString joins elements`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.joinToString(", ")
 
         assertEquals("1, 2, 3", result.value)
@@ -1659,7 +1659,7 @@ class ExtensionsTest {
 
     @Test
     fun `joinToString with prefix and postfix`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(listOf(1, 2, 3))
+        val source = DefaultMutableSignal(listOf(1, 2, 3))
         val result = source.joinToString(", ", "[", "]")
 
         assertEquals("[1, 2, 3]", result.value)
@@ -1673,7 +1673,7 @@ class ExtensionsTest {
 
     @Test
     fun `orDefault provides default for null`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(null)
+        val source = DefaultMutableSignal<Int?>(null)
         val result = source.orDefault(42)
 
         assertEquals(42, result.value)
@@ -1684,8 +1684,8 @@ class ExtensionsTest {
 
     @Test
     fun `orDefault with signal provides default`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(null)
-        val default = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val source = DefaultMutableSignal<Int?>(null)
+        val default = DefaultMutableSignal(42)
         val result = source.orDefault(default)
 
         assertEquals(42, result.value)
@@ -1702,8 +1702,8 @@ class ExtensionsTest {
 
     @Test
     fun `orElse is alias for orDefault`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(null)
-        val fallback = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val source = DefaultMutableSignal<Int?>(null)
+        val fallback = DefaultMutableSignal(42)
         val result = source.orElse(fallback)
 
         assertEquals(42, result.value)
@@ -1713,7 +1713,7 @@ class ExtensionsTest {
 
     @Test
     fun `onEach executes side effect`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val sideEffects = mutableListOf<Int>()
         val result = source.onEach { sideEffects.add(it) }
 
@@ -1729,7 +1729,7 @@ class ExtensionsTest {
 
     @Test
     fun `tap is alias for onEach`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val tapped = mutableListOf<Int>()
         val result = source.tap { tapped.add(it) }
 
@@ -1741,7 +1741,7 @@ class ExtensionsTest {
 
     @Test
     fun `isPresent returns true for non-null`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(10)
+        val source = DefaultMutableSignal<Int?>(10)
         val result = source.isPresent()
 
         assertTrue(result.value)
@@ -1754,7 +1754,7 @@ class ExtensionsTest {
 
     @Test
     fun `isAbsent returns true for null`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal<Int?>(null)
+        val source = DefaultMutableSignal<Int?>(null)
         val result = source.isAbsent()
 
         assertTrue(result.value)
@@ -1771,7 +1771,7 @@ class ExtensionsTest {
 
     @Test
     fun `toggle flips boolean`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(false)
+        val signal = mutableSignalOf(false)
 
         signal.toggle()
         assertTrue(signal.value)
@@ -1784,7 +1784,7 @@ class ExtensionsTest {
 
     @Test
     fun `increment Int increases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10)
+        val signal = mutableSignalOf(10)
 
         signal.increment()
         assertEquals(11, signal.value)
@@ -1795,7 +1795,7 @@ class ExtensionsTest {
 
     @Test
     fun `increment Long increases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10L)
+        val signal = mutableSignalOf(10L)
 
         signal.increment()
         assertEquals(11L, signal.value)
@@ -1806,7 +1806,7 @@ class ExtensionsTest {
 
     @Test
     fun `increment Double increases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10.0)
+        val signal = mutableSignalOf(10.0)
 
         signal.increment()
         assertEquals(11.0, signal.value)
@@ -1819,7 +1819,7 @@ class ExtensionsTest {
 
     @Test
     fun `decrement Int decreases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10)
+        val signal = mutableSignalOf(10)
 
         signal.decrement()
         assertEquals(9, signal.value)
@@ -1830,7 +1830,7 @@ class ExtensionsTest {
 
     @Test
     fun `decrement Long decreases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10L)
+        val signal = mutableSignalOf(10L)
 
         signal.decrement()
         assertEquals(9L, signal.value)
@@ -1841,7 +1841,7 @@ class ExtensionsTest {
 
     @Test
     fun `decrement Double decreases value`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(10.0)
+        val signal = mutableSignalOf(10.0)
 
         signal.decrement()
         assertEquals(9.0, signal.value)
@@ -1854,7 +1854,7 @@ class ExtensionsTest {
 
     @Test
     fun `append adds suffix to string`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf("Hello")
+        val signal = mutableSignalOf("Hello")
 
         signal.append(" World")
         assertEquals("Hello World", signal.value)
@@ -1864,7 +1864,7 @@ class ExtensionsTest {
 
     @Test
     fun `prepend adds prefix to string`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf("World")
+        val signal = mutableSignalOf("World")
 
         signal.prepend("Hello ")
         assertEquals("Hello World", signal.value)
@@ -1874,7 +1874,7 @@ class ExtensionsTest {
 
     @Test
     fun `clear empties string`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf("Hello")
+        val signal = mutableSignalOf("Hello")
 
         signal.clear()
         assertTrue(signal.value.isEmpty())
@@ -1884,7 +1884,7 @@ class ExtensionsTest {
 
     @Test
     fun `add appends to list`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(listOf(1, 2))
+        val signal = mutableSignalOf(listOf(1, 2))
 
         signal.add(3)
         assertEquals(listOf(1, 2, 3), signal.value)
@@ -1894,7 +1894,7 @@ class ExtensionsTest {
 
     @Test
     fun `addAll appends multiple to list`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(listOf(1))
+        val signal = mutableSignalOf(listOf(1))
 
         signal.addAll(listOf(2, 3, 4))
         assertEquals(listOf(1, 2, 3, 4), signal.value)
@@ -1904,7 +1904,7 @@ class ExtensionsTest {
 
     @Test
     fun `remove removes from list`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(listOf(1, 2, 3))
+        val signal = mutableSignalOf(listOf(1, 2, 3))
 
         signal.remove(2)
         assertEquals(listOf(1, 3), signal.value)
@@ -1914,7 +1914,7 @@ class ExtensionsTest {
 
     @Test
     fun `removeAt removes element at index`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(listOf(10, 20, 30))
+        val signal = mutableSignalOf(listOf(10, 20, 30))
 
         signal.removeAt(1)
         assertEquals(listOf(10, 30), signal.value)
@@ -1924,7 +1924,7 @@ class ExtensionsTest {
 
     @Test
     fun `clearList empties list`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(listOf(1, 2, 3))
+        val signal = mutableSignalOf(listOf(1, 2, 3))
 
         signal.clearList()
         assertTrue(signal.value.isEmpty())
@@ -1934,7 +1934,7 @@ class ExtensionsTest {
 
     @Test
     fun `add appends to set`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(setOf(1, 2))
+        val signal = mutableSignalOf(setOf(1, 2))
 
         signal.add(3)
         assertEquals(setOf(1, 2, 3), signal.value)
@@ -1944,7 +1944,7 @@ class ExtensionsTest {
 
     @Test
     fun `remove removes from set`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(setOf(1, 2, 3))
+        val signal = mutableSignalOf(setOf(1, 2, 3))
 
         signal.remove(2)
         assertEquals(setOf(1, 3), signal.value)
@@ -1954,7 +1954,7 @@ class ExtensionsTest {
 
     @Test
     fun `clearSet empties set`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(setOf(1, 2, 3))
+        val signal = mutableSignalOf(setOf(1, 2, 3))
 
         signal.clearSet()
         assertTrue(signal.value.isEmpty())
@@ -1964,7 +1964,7 @@ class ExtensionsTest {
 
     @Test
     fun `put adds entry to map`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(mapOf("a" to 1))
+        val signal = mutableSignalOf(mapOf("a" to 1))
 
         signal.put("b", 2)
         assertEquals(mapOf("a" to 1, "b" to 2), signal.value)
@@ -1974,7 +1974,7 @@ class ExtensionsTest {
 
     @Test
     fun `remove removes key from map`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(mapOf("a" to 1, "b" to 2))
+        val signal = mutableSignalOf(mapOf("a" to 1, "b" to 2))
 
         signal.remove("a")
         assertEquals(mapOf("b" to 2), signal.value)
@@ -1984,7 +1984,7 @@ class ExtensionsTest {
 
     @Test
     fun `clearMap empties map`() {
-        val signal = io.github.fenrur.signal.mutableSignalOf(mapOf("a" to 1, "b" to 2))
+        val signal = mutableSignalOf(mapOf("a" to 1, "b" to 2))
 
         signal.clearMap()
         assertTrue(signal.value.isEmpty())
@@ -1996,7 +1996,7 @@ class ExtensionsTest {
 
     @Test
     fun `operators can be chained`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val result = source
             .map { it * 2 }
             .map { it + 5 }
@@ -2010,9 +2010,9 @@ class ExtensionsTest {
 
     @Test
     fun `combine and map can be chained`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
-        val result = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(10)
+        val b = DefaultMutableSignal(20)
+        val result = combine(a, b) { x, y -> x + y }
             .map { it * 2 }
             .mapToString()
 
@@ -2023,7 +2023,7 @@ class ExtensionsTest {
 
     @Test
     fun `changes propagate through chain`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(10)
         val doubled = source.map { it * 2 }
         val values = mutableListOf<Int>()
 

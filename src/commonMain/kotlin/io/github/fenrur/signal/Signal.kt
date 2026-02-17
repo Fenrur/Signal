@@ -68,7 +68,7 @@ interface Signal<out T> : AutoCloseable, ReadOnlyProperty<Any?, T> {
      * @param listener the callback to invoke on value changes or errors
      * @return a function to unsubscribe from this signal
      */
-    fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber
+    fun subscribe(listener: SubscribeListener<T>): UnSubscriber
 
     /**
      * Returns true if this signal has been closed.

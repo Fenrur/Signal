@@ -24,7 +24,7 @@ class OperatorCompositionTest {
 
     @Test
     fun `map-filter-scan chain works correctly`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val chain = source
             .map { it * 2 }           // 0 -> 0, 1 -> 2, 2 -> 4, 3 -> 6
             .filter { it > 0 }        // Filter out 0
@@ -46,7 +46,7 @@ class OperatorCompositionTest {
     fun `filter-map-distinctUntilChangedBy chain works correctly`() {
         data class Item(val id: Int, val name: String)
 
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(Item(0, "init"))
+        val source = DefaultMutableSignal(Item(0, "init"))
         val chain = source
             .filter { it.id > 0 }
             .map { it.name.uppercase() }
@@ -67,9 +67,9 @@ class OperatorCompositionTest {
 
     @Test
     fun `combine-map-filter chain works correctly`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val chain = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(10)
+        val chain = combine(a, b) { x, y -> x + y }
             .map { it * 2 }
             .filter { it > 20 }
 
@@ -87,9 +87,9 @@ class OperatorCompositionTest {
 
     @Test
     fun `flatMap with inner map chain works correctly`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(200)
+        val source = DefaultMutableSignal(1)
+        val inner1 = DefaultMutableSignal(100)
+        val inner2 = DefaultMutableSignal(200)
 
         val chain = source.flatMap { v ->
             if (v % 2 == 0) inner1.map { it + v } else inner2.map { it * v }
@@ -114,7 +114,7 @@ class OperatorCompositionTest {
 
     @Test
     fun `pairwise-map-filter chain works correctly`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val chain = source
             .pairwise()
             .map { (a, b) -> b - a }  // Compute difference
@@ -134,8 +134,8 @@ class OperatorCompositionTest {
 
     @Test
     fun `withLatestFrom-scan chain works correctly`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
-        val other = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val source = DefaultMutableSignal(0)
+        val other = DefaultMutableSignal(10)
 
         val chain = source
             .withLatestFrom(other) { a, b -> a + b }
@@ -162,7 +162,7 @@ class OperatorCompositionTest {
 
     @Test
     fun `batch updates through operator chain emit single final value`() {
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(0)
+        val source = DefaultMutableSignal(0)
         val chain = source
             .map { it * 2 }
             .filter { it >= 0 }
@@ -173,7 +173,7 @@ class OperatorCompositionTest {
 
         emissions.clear()
 
-        io.github.fenrur.signal.impl.batch {
+        batch {
             source.value = 1  // 2
             source.value = 2  // 4
             source.value = 3  // 6
@@ -188,21 +188,21 @@ class OperatorCompositionTest {
 
     @Test
     fun `nested batch through combined signals`() {
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val c = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(10)
+        val c = DefaultMutableSignal(100)
 
-        val ab = io.github.fenrur.signal.operators.combine(a, b) { x, y -> x + y }
-        val abc = io.github.fenrur.signal.operators.combine(ab, c) { xy, z -> xy + z }
+        val ab = combine(a, b) { x, y -> x + y }
+        val abc = combine(ab, c) { xy, z -> xy + z }
 
         val emissions = mutableListOf<Int>()
         abc.subscribe { r -> r.onSuccess { emissions.add(it) } }
 
         emissions.clear()
 
-        io.github.fenrur.signal.impl.batch {
+        batch {
             a.value = 2
-            io.github.fenrur.signal.impl.batch {
+            batch {
                 b.value = 20
                 c.value = 200
             }
@@ -220,7 +220,7 @@ class OperatorCompositionTest {
     @Test
     fun `error in middle of chain propagates correctly`() {
         var shouldThrow = false
-        val source = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
+        val source = DefaultMutableSignal(1)
         val chain = source
             .map { it * 2 }
             .map { v ->
@@ -259,10 +259,10 @@ class OperatorCompositionTest {
     @Test
     fun `error in combine chain propagates correctly`() {
         var shouldThrow = false
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(10)
 
-        val chain = io.github.fenrur.signal.operators.combine(a, b) { x, y ->
+        val chain = combine(a, b) { x, y ->
             if (shouldThrow) throw RuntimeException("Combine error")
             x + y
         }.map { it * 2 }
@@ -287,10 +287,10 @@ class OperatorCompositionTest {
         //   map   filter
         //      \ /
         //    combine
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(5)
+        val a = DefaultMutableSignal(5)
         val mapped = a.map { it * 2 }
         val filtered = a.filter { it > 3 }
-        val combined = io.github.fenrur.signal.operators.combine(mapped, filtered) { m, f -> m + f }
+        val combined = combine(mapped, filtered) { m, f -> m + f }
 
         val emissions = mutableListOf<Int>()
         combined.subscribe { r -> r.onSuccess { emissions.add(it) } }
@@ -313,12 +313,12 @@ class OperatorCompositionTest {
         //    combine
         //       |
         //     scan
-        val a = io.github.fenrur.signal.impl.DefaultMutableSignal(1)
-        val b = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val a = DefaultMutableSignal(1)
+        val b = DefaultMutableSignal(10)
 
         val aDouble = a.map { it * 2 }
         val bTriple = b.map { it * 3 }
-        val combined = io.github.fenrur.signal.operators.combine(aDouble, bTriple) { x, y -> x + y }
+        val combined = combine(aDouble, bTriple) { x, y -> x + y }
         val scanned = combined.scan(0) { acc, v -> acc + v }
 
         val emissions = mutableListOf<Int>()

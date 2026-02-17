@@ -4,33 +4,33 @@ import io.github.fenrur.signal.AbstractSignalTest
 import io.github.fenrur.signal.Signal
 import kotlin.test.*
 
-class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.fenrur.signal.Signal<Int>>() {
+class FlattenSignalTest : AbstractSignalTest<Signal<Int>>() {
 
-    override fun createSignal(initial: Int): io.github.fenrur.signal.Signal<Int> {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(initial)
+    override fun createSignal(initial: Int): Signal<Int> {
+        val inner = DefaultMutableSignal(initial)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        return io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        return FlattenSignal(outer)
     }
 
     // ==================== FlattenSignal-specific tests ====================
 
     @Test
     fun `flatten signal returns inner signal value`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val inner = DefaultMutableSignal(42)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
 
         assertEquals(42, flattened.value)
     }
 
     @Test
     fun `flatten signal updates when inner signal changes`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
 
         inner.value = 20
 
@@ -39,11 +39,11 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal switches to new inner signal`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(20)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(20)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner1 as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner1 as Signal<Int>)
+        val flattened = FlattenSignal(outer)
 
         assertEquals(10, flattened.value)
 
@@ -54,10 +54,10 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal notifies when inner signal value changes`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -71,11 +71,11 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal notifies when switching inner signals`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(100)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner1 as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner1 as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -88,11 +88,11 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal stops receiving from old inner after switch`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(100)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner1 as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner1 as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -108,11 +108,11 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal receives from new inner after switch`() {
-        val inner1 = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
-        val inner2 = io.github.fenrur.signal.impl.DefaultMutableSignal(100)
+        val inner1 = DefaultMutableSignal(10)
+        val inner2 = DefaultMutableSignal(100)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner1 as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner1 as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -127,10 +127,10 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten signal stops receiving after close`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -144,10 +144,10 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `unsubscribe stops receiving notifications`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values = mutableListOf<Int>()
 
         val unsubscribe = flattened.subscribe { it.onSuccess { v -> values.add(v) } }
@@ -162,12 +162,12 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `flatten with nested read-only signals`() {
-        val inner1: io.github.fenrur.signal.Signal<Int> =
-            io.github.fenrur.signal.impl.DefaultSignal(10)
-        val inner2: io.github.fenrur.signal.Signal<Int> =
-            io.github.fenrur.signal.impl.DefaultSignal(20)
-        val outer = io.github.fenrur.signal.impl.DefaultMutableSignal(inner1)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+        val inner1: Signal<Int> =
+            DefaultSignal(10)
+        val inner2: Signal<Int> =
+            DefaultSignal(20)
+        val outer = DefaultMutableSignal(inner1)
+        val flattened = FlattenSignal(outer)
 
         assertEquals(10, flattened.value)
 
@@ -178,10 +178,10 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `multiple subscribers receive same notifications`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(10)
+        val inner = DefaultMutableSignal(10)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
         val values1 = mutableListOf<Int>()
         val values2 = mutableListOf<Int>()
 
@@ -198,10 +198,10 @@ class FlattenSignalTest : io.github.fenrur.signal.AbstractSignalTest<io.github.f
 
     @Test
     fun `toString shows value and state`() {
-        val inner = io.github.fenrur.signal.impl.DefaultMutableSignal(42)
+        val inner = DefaultMutableSignal(42)
         val outer =
-            io.github.fenrur.signal.impl.DefaultMutableSignal(inner as io.github.fenrur.signal.Signal<Int>)
-        val flattened = io.github.fenrur.signal.impl.FlattenSignal(outer)
+            DefaultMutableSignal(inner as Signal<Int>)
+        val flattened = FlattenSignal(outer)
 
         assertTrue(flattened.toString().contains("42"))
         assertTrue(flattened.toString().contains("FlattenSignal"))

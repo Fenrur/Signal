@@ -27,9 +27,9 @@ import kotlin.concurrent.atomics.*
 class StateFlowSignal<T>(
     private val stateFlow: StateFlow<T>,
     private val scope: CoroutineScope
-) : io.github.fenrur.signal.Signal<T>, io.github.fenrur.signal.impl.SourceSignalNode {
+) : Signal<T>, SourceSignalNode {
 
-    private val listeners = CopyOnWriteArrayList<io.github.fenrur.signal.SubscribeListener<T>>()
+    private val listeners = CopyOnWriteArrayList<SubscribeListener<T>>()
     private val closed = AtomicBoolean(false)
     private val lastValue = AtomicReference(stateFlow.value)
 
@@ -38,17 +38,17 @@ class StateFlowSignal<T>(
     private val collectJob = AtomicReference<Job?>(null)
 
     // Glitch-free infrastructure
-    private val targets = CopyOnWriteArrayList<io.github.fenrur.signal.impl.DirtyMarkable>()
+    private val targets = CopyOnWriteArrayList<DirtyMarkable>()
     private val _version = AtomicLong(0L)
     override val version: Long get() = _version.load()
 
-    private val listenerEffect = object : io.github.fenrur.signal.impl.EffectNode {
+    private val listenerEffect = object : EffectNode {
         private val pending = AtomicBoolean(false)
         override fun markPending(): Boolean = pending.compareAndSet(false, true)
         override fun execute() {
             pending.store(false)
             if (!closed.load() && listeners.isNotEmpty()) {
-                io.github.fenrur.signal.impl.notifyAllValue(listeners, stateFlow.value)
+                notifyAllValue(listeners, stateFlow.value)
             }
         }
     }
@@ -61,18 +61,18 @@ class StateFlowSignal<T>(
                     val old = lastValue.exchange(newValue)
                     if (old != newValue) {
                         _version.incrementAndFetch()
-                        io.github.fenrur.signal.impl.SignalGraph.incrementGlobalVersion()
+                        SignalGraph.incrementGlobalVersion()
 
-                        io.github.fenrur.signal.impl.SignalGraph.startBatch()
+                        SignalGraph.startBatch()
                         try {
                             for (target in targets) {
                                 target.markDirty()
                             }
                             if (listeners.isNotEmpty()) {
-                                io.github.fenrur.signal.impl.SignalGraph.scheduleEffect(listenerEffect)
+                                SignalGraph.scheduleEffect(listenerEffect)
                             }
                         } finally {
-                            io.github.fenrur.signal.impl.SignalGraph.endBatch()
+                            SignalGraph.endBatch()
                         }
                     }
                 }
@@ -100,7 +100,7 @@ class StateFlowSignal<T>(
     override val value: T
         get() = stateFlow.value
 
-    override fun subscribe(listener: io.github.fenrur.signal.SubscribeListener<T>): io.github.fenrur.signal.UnSubscriber {
+    override fun subscribe(listener: SubscribeListener<T>): UnSubscriber {
         if (closed.load()) return {}
         ensureSubscribed()
         listener(Result.success(value))
@@ -113,12 +113,12 @@ class StateFlowSignal<T>(
 
     override val isClosed: Boolean get() = closed.load()
 
-    override fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun addTarget(target: DirtyMarkable) {
         targets += target
         ensureSubscribed()
     }
 
-    override fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable) {
+    override fun removeTarget(target: DirtyMarkable) {
         targets -= target
         maybeUnsubscribe()
     }

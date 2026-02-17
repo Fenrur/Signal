@@ -80,7 +80,7 @@ object SignalGraph {
      * Queue of effects pending execution at the end of the current batch.
      */
     @JvmStatic
-    private val pendingEffects = ConcurrentQueue<io.github.fenrur.signal.impl.EffectNode>()
+    private val pendingEffects = ConcurrentQueue<EffectNode>()
 
     /**
      * Whether we're currently flushing effects. Prevents recursive flush.
@@ -152,7 +152,7 @@ object SignalGraph {
      * If not in a batch, the effect runs immediately.
      */
     @JvmStatic
-    fun scheduleEffect(effect: io.github.fenrur.signal.impl.EffectNode) {
+    fun scheduleEffect(effect: EffectNode) {
         if (isInBatch()) {
             // Only add if not already pending
             if (effect.markPending()) {
@@ -231,11 +231,11 @@ interface EffectNode {
 /**
  * Base interface for computed signals that participate in the dependency graph.
  */
-interface ComputedSignalNode : io.github.fenrur.signal.impl.DirtyMarkable {
+interface ComputedSignalNode : DirtyMarkable {
     val version: Long
     fun validateAndGet(): Any?
-    fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable)
-    fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable)
+    fun addTarget(target: DirtyMarkable)
+    fun removeTarget(target: DirtyMarkable)
 }
 
 /**
@@ -243,11 +243,11 @@ interface ComputedSignalNode : io.github.fenrur.signal.impl.DirtyMarkable {
  */
 interface SourceSignalNode {
     val version: Long
-    fun addTarget(target: io.github.fenrur.signal.impl.DirtyMarkable)
-    fun removeTarget(target: io.github.fenrur.signal.impl.DirtyMarkable)
+    fun addTarget(target: DirtyMarkable)
+    fun removeTarget(target: DirtyMarkable)
 }
 
 /**
  * Top-level batch function for convenient access.
  */
-fun <T> batch(block: () -> T): T = io.github.fenrur.signal.impl.SignalGraph.batch(block)
+fun <T> batch(block: () -> T): T = SignalGraph.batch(block)
