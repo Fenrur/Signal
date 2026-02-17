@@ -1,26 +1,88 @@
 # Signal
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.fenrur/signal)](https://central.sonatype.com/artifact/io.github.fenrur/signal)
+[![Build](https://github.com/Fenrur/Signal/actions/workflows/ci.yml/badge.svg)](https://github.com/Fenrur/Signal/actions/workflows/ci.yml)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.1.20-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A reactive state management library for Kotlin, inspired by SolidJS signals and Kotlin StateFlow.
+A lightweight, glitch-free reactive signal library for Kotlin Multiplatform, inspired by [SolidJS signals](https://www.solidjs.com/docs/latest/api#createsignal) and Kotlin StateFlow.
+
+### Platforms
+
+| JVM | JS | WasmJS | WasmWASI | Linux x64 | macOS x64 | macOS ARM64 | Windows x64 |
+|:---:|:--:|:------:|:--------:|:---------:|:---------:|:-----------:|:-----------:|
+| :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+
+### Quick Example
+
+```kotlin
+import io.github.fenrur.signal.*
+import io.github.fenrur.signal.operators.*
+
+val count = mutableSignalOf(0)
+val doubled = count.map { it * 2 }
+
+doubled.subscribe { it.onSuccess { v -> println("doubled = $v") } }
+// prints: doubled = 0
+
+count.value = 5
+// prints: doubled = 10
+```
+
+## Features
+
+- **Glitch-free propagation** -- derived signals never observe inconsistent intermediate values, even in diamond dependency graphs
+- **Thread-safe** -- all signal implementations are safe for concurrent reads, writes, and subscriptions
+- **Rich operator library** -- 60+ built-in operators: map, filter, combine, flatMap, scan, boolean, numeric, string, collection, and more
+- **Batching** -- group multiple signal updates together to defer notifications and avoid intermediate states
+- **Bindable signals** -- dynamically switch the source signal at runtime with automatic circular binding detection
+- **Property delegates** -- use signals as Kotlin `by` delegates for seamless integration
+- **Coroutines Flow interop** -- bidirectional conversion between Signal and `StateFlow` / `MutableStateFlow`
+- **Reactive Streams interop** -- convert to/from `org.reactivestreams.Publisher` (JVM)
+- **Zero mandatory dependencies** -- only `kotlinx-coroutines-core` for Flow/StateFlow interop
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Core Concepts](#core-concepts)
+  - [Signal](#signal)
+  - [MutableSignal](#mutablesignal)
+  - [BindableSignal](#bindablesignal)
+  - [BindableMutableSignal](#bindablemutablesignal)
+- [Operators](#operators)
+  - [Transformation](#transformation) | [Filtering](#filtering) | [Combination](#combination)
+  - [Boolean](#boolean) | [Numeric](#numeric) | [Comparison](#comparison)
+  - [String](#string) | [Collection](#collection-list) | [Utility](#utility)
+  - [MutableSignal Modifiers](#mutablesignal-modifiers)
+- [Batching](#batching)
+- [Glitch-Free Semantics](#glitch-free-semantics)
+- [Integrations](#integrations)
+  - [Coroutines Flow](#kotlin-coroutines-flow) | [Reactive Streams](#reactive-streams-jvm-only) | [Java Flow](#java-flow-jdk-9-jvm-only)
+- [Thread Safety](#thread-safety)
+- [License](#license)
 
 ## Installation
 
-### Gradle (Kotlin DSL)
+### Kotlin Multiplatform
 
 ```kotlin
 // build.gradle.kts
-dependencies {
-    implementation("io.github.fenrur:signal:3.0.0")
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation("io.github.fenrur:signal:3.0.0")
+            }
+        }
+    }
 }
 ```
 
-### Gradle (Groovy)
+### JVM / Android only
 
-```groovy
-// build.gradle
+```kotlin
 dependencies {
-    implementation 'io.github.fenrur:signal:3.0.0'
+    implementation("io.github.fenrur:signal-jvm:3.0.0")
 }
 ```
 
@@ -29,7 +91,7 @@ dependencies {
 ```xml
 <dependency>
     <groupId>io.github.fenrur</groupId>
-    <artifactId>signal</artifactId>
+    <artifactId>signal-jvm</artifactId>
     <version>3.0.0</version>
 </dependency>
 ```
@@ -89,48 +151,29 @@ delegatedCount = 10
 println(count.value) // 10
 ```
 
-### Special Signals
-
-```kotlin
-// Read-only signal (immutable)
-val constant: Signal<String> = signalOf("Hello")
-
-// From Java Flow.Publisher
-val flowSignal = publisher.asSignal(initialValue)
-```
-
 ### BindableSignal
 
 A `BindableSignal<T>` is a read-only signal that acts as a proxy to another `Signal`. It allows you to dynamically switch the underlying signal at runtime while maintaining subscriptions.
 
-#### Basic Usage
-
 ```kotlin
-// Create an unbound signal
 val bindable = bindableSignalOf<Int>()
-println(bindable.isBound()) // false
 
 // Bind to a source signal
 val source1 = signalOf(10)
 bindable.bindTo(source1)
 println(bindable.value) // 10
 
-// Switch to a different source
+// Switch to a different source -- subscribers are automatically notified
 val source2 = mutableSignalOf(100)
 bindable.bindTo(source2)
 println(bindable.value) // 100
 
-// Changes in the source are propagated
 source2.value = 200
 println(bindable.value) // 200
-
-// Subscribers are automatically notified of the new value
-bindable.subscribe { result ->
-    result.onSuccess { println("Value: $it") }
-}
 ```
 
-#### Factory Functions
+<details>
+<summary><strong>Factory Functions</strong></summary>
 
 ```kotlin
 // Create unbound (throws on value access until bound)
@@ -149,7 +192,10 @@ println(withSignal.isBound())        // true
 println(withSignal.currentSignal())  // returns the bound Signal
 ```
 
-#### Ownership Mode
+</details>
+
+<details>
+<summary><strong>Ownership Mode</strong></summary>
 
 When `takeOwnership = true`, the bindable signal takes ownership of bound signals and closes them automatically:
 
@@ -158,7 +204,6 @@ val bindable = bindableSignalOf<Int>(takeOwnership = true)
 
 val source1 = signalOf(1)
 bindable.bindTo(source1)
-println(source1.isClosed) // false
 
 val source2 = signalOf(2)
 bindable.bindTo(source2)
@@ -168,7 +213,10 @@ bindable.close()
 println(source2.isClosed) // true - closed when bindable closes
 ```
 
-#### Circular Binding Detection
+</details>
+
+<details>
+<summary><strong>Circular Binding Detection</strong></summary>
 
 The library automatically detects and prevents circular bindings that would cause infinite loops:
 
@@ -189,104 +237,50 @@ if (!BindableSignal.wouldCreateCycle(a, c)) {
 }
 ```
 
+</details>
+
 ### BindableMutableSignal
 
-A `BindableMutableSignal<T>` is an interface that acts as a proxy to another `MutableSignal`. It allows you to dynamically switch the underlying signal at runtime while maintaining subscriptions.
-
-#### Basic Usage
+A `BindableMutableSignal<T>` acts as a proxy to another `MutableSignal`. Read and write operations are forwarded to the bound source.
 
 ```kotlin
-// Create an unbound signal
 val bindable = bindableMutableSignalOf<Int>()
-println(bindable.isBound()) // false
 
-// Bind to a source signal
-val source1 = mutableSignalOf(10)
-bindable.bindTo(source1)
+val source = mutableSignalOf(10)
+bindable.bindTo(source)
 println(bindable.value) // 10
 
-// Read and write through the bindable signal
+// Write through the bindable signal
 bindable.value = 20
-println(source1.value) // 20 - changes propagate to source
-
-// Switch to a different source
-val source2 = mutableSignalOf(100)
-bindable.bindTo(source2)
-println(bindable.value) // 100
-
-// Subscribers are automatically notified of the new value
-bindable.subscribe { result ->
-    result.onSuccess { println("Value: $it") }
-}
+println(source.value) // 20 - changes propagate to source
 ```
 
-#### Factory Functions
+<details>
+<summary><strong>Factory Functions, Ownership Mode & Circular Binding Detection</strong></summary>
+
+Works the same as `BindableSignal`, but for `MutableSignal` sources:
 
 ```kotlin
-// Create unbound (throws on value access until bound)
-val unbound = bindableMutableSignalOf<String>()
-
-// Create with initial signal binding
-val withSignal = bindableMutableSignalOf(mutableSignalOf(42))
-println(withSignal.value) // 42
-
-// Create with initial value (creates internal signal automatically)
+// Create with initial value
 val withValue = bindableMutableSignalOf(initialValue = "Hello")
-println(withValue.value) // "Hello"
 
-// Check binding state
-println(withSignal.isBound())        // true
-println(withSignal.currentSignal())  // returns the bound MutableSignal
-```
+// Create with initial mutable signal binding
+val withSignal = bindableMutableSignalOf(mutableSignalOf(42))
 
-#### Ownership Mode
+// Ownership mode
+val owned = bindableMutableSignalOf<Int>(takeOwnership = true)
 
-When `takeOwnership = true`, the bindable signal takes ownership of bound signals and closes them automatically:
-
-```kotlin
-val bindable = bindableMutableSignalOf<Int>(takeOwnership = true)
-
-val source1 = mutableSignalOf(1)
-bindable.bindTo(source1)
-println(source1.isClosed) // false
-
-val source2 = mutableSignalOf(2)
-bindable.bindTo(source2)
-println(source1.isClosed) // true - automatically closed on rebind
-
-bindable.close()
-println(source2.isClosed) // true - closed when bindable closes
-```
-
-#### Circular Binding Detection
-
-The library automatically detects and prevents circular bindings that would cause infinite loops:
-
-```kotlin
+// Circular detection
 val a = bindableMutableSignalOf(1)
 val b = bindableMutableSignalOf(2)
-val c = bindableMutableSignalOf(3)
-
 a.bindTo(b)
-b.bindTo(c)
-
-// This would create a cycle: a -> b -> c -> a
-c.bindTo(a) // Throws IllegalStateException: "Circular binding detected"
-
-// You can check for cycles before binding
-if (!BindableMutableSignal.wouldCreateCycle(c, a)) {
-    c.bindTo(a)
-}
+b.bindTo(a) // Throws IllegalStateException: "Circular binding detected"
 ```
 
-The `wouldCreateCycle` function traverses the binding chain to detect:
-- Direct self-binding (`a.bindTo(a)`)
-- Simple cycles (`a -> b -> a`)
-- Chain cycles (`a -> b -> c -> a`)
+</details>
 
 ## Operators
 
-Import operators:
 ```kotlin
 import io.github.fenrur.signal.operators.*
 ```
@@ -436,14 +430,11 @@ val isMinor = age lt limit  // Signal<Boolean> = false
 | Operator | Description |
 |----------|-------------|
 | `+` | Concatenate |
-| `isEmpty()` | Check if empty |
-| `isNotEmpty()` | Check if not empty |
-| `isBlank()` | Check if blank |
-| `isNotBlank()` | Check if not blank |
+| `isEmpty()` / `isNotEmpty()` | Check empty |
+| `isBlank()` / `isNotBlank()` | Check blank |
 | `length()` | Get length |
 | `trim()` | Trim whitespace |
-| `uppercase()` | Convert to uppercase |
-| `lowercase()` | Convert to lowercase |
+| `uppercase()` / `lowercase()` | Case conversion |
 
 ```kotlin
 val name = mutableSignalOf("  John  ")
@@ -458,23 +449,12 @@ val valid = name.trim().isNotEmpty() // true
 
 | Operator | Description |
 |----------|-------------|
-| `size()` | Get size |
-| `isEmpty()` | Check if empty |
-| `isNotEmpty()` | Check if not empty |
-| `firstOrNull()` | Get first element |
-| `lastOrNull()` | Get last element |
-| `getOrNull(index)` | Get element at index |
-| `contains(element)` | Check if contains |
-| `filterList { }` | Filter elements |
-| `mapList { }` | Map elements |
-| `flatMapList { }` | FlatMap elements |
-| `sorted()` | Sort ascending |
-| `sortedDescending()` | Sort descending |
-| `sortedBy { }` | Sort by selector |
-| `reversed()` | Reverse order |
-| `take(n)` | Take first n |
-| `drop(n)` | Drop first n |
-| `distinct()` | Remove duplicates |
+| `size()` / `isEmpty()` / `isNotEmpty()` | Size checks |
+| `firstOrNull()` / `lastOrNull()` / `getOrNull(index)` | Element access |
+| `contains(element)` | Membership check |
+| `filterList { }` / `mapList { }` / `flatMapList { }` | Transform elements |
+| `sorted()` / `sortedDescending()` / `sortedBy { }` | Sorting |
+| `reversed()` / `take(n)` / `drop(n)` / `distinct()` | Slicing |
 | `joinToString()` | Join to string |
 
 ```kotlin
@@ -492,14 +472,10 @@ val csv = items.joinToString(", ")          // "3, 1, 4, 1, 5"
 
 | Operator | Description |
 |----------|-------------|
-| `orDefault(value)` | Default for null |
-| `orDefault(signal)` | Default from signal |
-| `orElse(signal)` | Alias for orDefault |
-| `onEach { }` | Side effect |
-| `tap { }` | Alias for onEach |
+| `orDefault(value)` / `orDefault(signal)` | Default for null |
+| `onEach { }` / `tap { }` | Side effect |
 | `log(prefix)` | Log values |
-| `isPresent()` | True if not null |
-| `isAbsent()` | True if null |
+| `isPresent()` / `isAbsent()` | Null checks |
 
 ```kotlin
 val name = mutableSignalOf<String?>(null)
@@ -515,19 +491,11 @@ val debugged = name.log("Name changed")
 | Operator | Description |
 |----------|-------------|
 | `toggle()` | Toggle boolean |
-| `increment(by)` | Increment number |
-| `decrement(by)` | Decrement number |
-| `append(suffix)` | Append to string |
-| `prepend(prefix)` | Prepend to string |
-| `clear()` | Clear string |
-| `add(element)` | Add to list/set |
-| `addAll(elements)` | Add all to list |
-| `remove(element)` | Remove from list/set/map |
-| `removeAt(index)` | Remove at index from list |
-| `clearList()` | Clear list |
+| `increment(by)` / `decrement(by)` | Increment/decrement number |
+| `append(suffix)` / `prepend(prefix)` / `clear()` | String mutations |
+| `add(element)` / `addAll(elements)` / `remove(element)` / `removeAt(index)` / `clearList()` | List mutations |
 | `clearSet()` | Clear set |
-| `put(key, value)` | Put in map |
-| `clearMap()` | Clear map |
+| `put(key, value)` / `remove(key)` / `clearMap()` | Map mutations |
 
 ```kotlin
 val isEnabled = mutableSignalOf(false)
@@ -548,86 +516,11 @@ cache.put("a", 1)    // {a=1}
 cache.remove("a")    // {}
 ```
 
-## Optional Integrations
-
-The following integrations are optional. Add the corresponding dependency only if you need them.
-
-### Kotlin Coroutines Flow (Optional)
-
-Convert between Signal and Kotlin Flow:
-
-```kotlin
-// Add Coroutines as a dependency (not included transitively)
-implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-```
-
-```kotlin
-import io.github.fenrur.signal.*
-
-// Convert Signal to Flow
-val signal = mutableSignalOf(0)
-val flow: Flow<Int> = signal.asFlow()
-
-// Collect the flow
-flow.collect { value ->
-    println("Value: $value")
-}
-
-// Convert StateFlow to read-only Signal (bidirectional sync)
-val stateFlow: StateFlow<Int> = someStateFlow
-val signal: Signal<Int> = stateFlow.asSignal(scope)
-
-// Convert MutableStateFlow to MutableSignal (bidirectional sync)
-val mutableStateFlow = MutableStateFlow(100)
-val mutableSignal: MutableSignal<Int> = mutableStateFlow.asSignal(scope)
-
-// Changes from either side are synchronized:
-mutableSignal.value = 200       // Updates mutableStateFlow
-mutableStateFlow.value = 300    // Notifies signal subscribers
-```
-
-### Reactive Streams (Optional)
-
-Convert between Signal and Reactive Streams Publisher:
-
-```kotlin
-// Add Reactive Streams as a dependency (not included transitively)
-implementation("org.reactivestreams:reactive-streams:1.0.4")
-```
-
-```kotlin
-import io.github.fenrur.signal.*
-
-// Convert Signal to Reactive Streams Publisher
-val signal = mutableSignalOf("hello")
-val publisher: Publisher<String> = signal.asReactiveStreamsPublisher()
-
-// Convert Reactive Streams Publisher to Signal
-val signal: Signal<Int> = somePublisher.asSignal(initial = 0)
-```
-
-### Java Flow (JDK 9+)
-
-Convert Java's `java.util.concurrent.Flow.Publisher` to Signal:
-
-```kotlin
-import io.github.fenrur.signal.*
-
-// Convert JDK Flow.Publisher to Signal
-val signal = jdkPublisher.asJdkPublisher()
-
-// With initial value
-val signal = jdkPublisher.asJdkPublisher(initial = 0)
-```
-
 ## Batching
 
-When updating multiple signals, each update normally triggers immediate notifications to subscribers. The `batch { }` function groups multiple signal mutations together, deferring all notifications until the batch completes. This prevents intermediate states and reduces unnecessary recomputations.
+Group multiple signal updates together to defer notifications until the batch completes. This prevents intermediate states and reduces unnecessary recomputations.
 
 ```kotlin
-import io.github.fenrur.signal.*
-import io.github.fenrur.signal.operators.*
-
 val firstName = mutableSignalOf("John")
 val lastName = mutableSignalOf("Doe")
 val fullName = combine(firstName, lastName) { first, last -> "$first $last" }
@@ -651,7 +544,8 @@ batch {
 // Note: "Bob Doe" was never emitted!
 ```
 
-### Nested Batches
+<details>
+<summary><strong>Nested Batches & Return Values</strong></summary>
 
 Batches can be nested. Only the outermost batch triggers notifications:
 
@@ -667,8 +561,6 @@ batch {
 // Now subscribers are notified with "Alice Johnson"
 ```
 
-### Return Values
-
 `batch { }` returns the result of the block:
 
 ```kotlin
@@ -680,20 +572,17 @@ val result = batch {
 println(result) // "Operation completed"
 ```
 
-### Use Cases
+</details>
 
-- **Form submissions**: Update multiple form fields atomically
-- **State resets**: Reset multiple signals without intermediate states
-- **Complex calculations**: Update dependent values together
-- **Performance**: Reduce the number of recomputations in derived signals
+**Use cases:** form submissions, state resets, complex calculations, performance optimization of derived signals.
 
 ## Glitch-Free Semantics
 
-This library implements a push-pull model that guarantees glitch-free behavior:
+This library implements a push-pull model that guarantees **glitch-free** behavior:
 
-- **No intermediate states**: Derived signals never observe inconsistent intermediate values
-- **Diamond pattern safety**: In dependency graphs like `c = combine(a.map{}, b.map{})`, derived signals receive exactly one notification per source update
-- **Consistent snapshots**: Subscribers always see a consistent view of the signal graph
+- **No intermediate states** -- derived signals never observe inconsistent intermediate values
+- **Diamond pattern safety** -- in dependency graphs like `c = combine(a.map{}, b.map{})`, derived signals receive exactly one notification per source update
+- **Consistent snapshots** -- subscribers always see a consistent view of the signal graph
 
 ```kotlin
 val source = mutableSignalOf(1)
@@ -710,10 +599,71 @@ source.value = 2
 // Note: [5, 7] or [5, 8] never appears (no glitch)
 ```
 
+## Integrations
+
+### Kotlin Coroutines Flow
+
+Convert between Signal and Kotlin Flow (all platforms):
+
+```kotlin
+// Add Coroutines as a dependency (not included transitively)
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+```
+
+```kotlin
+// Signal -> Flow
+val signal = mutableSignalOf(0)
+val flow: Flow<Int> = signal.asFlow()
+
+// StateFlow -> Signal (bidirectional sync)
+val stateFlow: StateFlow<Int> = someStateFlow
+val signal: Signal<Int> = stateFlow.asSignal(scope)
+
+// MutableStateFlow -> MutableSignal (bidirectional sync)
+val mutableStateFlow = MutableStateFlow(100)
+val mutableSignal: MutableSignal<Int> = mutableStateFlow.asSignal(scope)
+
+// Changes from either side are synchronized:
+mutableSignal.value = 200       // Updates mutableStateFlow
+mutableStateFlow.value = 300    // Notifies signal subscribers
+```
+
+### Reactive Streams (JVM only)
+
+```kotlin
+// Add Reactive Streams as a dependency (not included transitively)
+implementation("org.reactivestreams:reactive-streams:1.0.4")
+```
+
+```kotlin
+// Signal -> Publisher
+val publisher: Publisher<String> = signal.asReactiveStreamsPublisher()
+
+// Publisher -> Signal
+val signal: Signal<Int> = somePublisher.asSignal(initial = 0)
+```
+
+### Java Flow (JDK 9+, JVM only)
+
+```kotlin
+// JDK Flow.Publisher -> Signal
+val signal = jdkPublisher.asJdkPublisher(initial = 0)
+```
+
 ## Thread Safety
 
-All signal implementations are thread-safe. Subscriptions, value reads, and value writes can be performed concurrently from multiple threads.
+All signal implementations are thread-safe. Subscriptions, value reads, and value writes can be performed concurrently from multiple threads without additional synchronization.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a [Pull Request](https://github.com/Fenrur/Signal/pulls).
 
 ## License
 
+```
 MIT License
+
+Copyright (c) 2025 Livio TINNIRELLO
+```
+
+See [LICENSE](LICENSE) for full details.
