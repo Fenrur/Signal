@@ -29,8 +29,28 @@ jobs:
           key: konan-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: konan-${{ runner.os }}-
 
+      - name: Verify signing secrets are configured
+        run: |
+          if [ -z "$ORG_GRADLE_PROJECT_signingInMemoryKey" ]; then
+            echo "::error::SIGNING_KEY secret is empty or not set"
+            exit 1
+          fi
+          if [ -z "$ORG_GRADLE_PROJECT_signingInMemoryKeyId" ]; then
+            echo "::error::SIGNING_KEY_ID secret is empty or not set"
+            exit 1
+          fi
+          if [ -z "$ORG_GRADLE_PROJECT_signingInMemoryKeyPassword" ]; then
+            echo "::error::SIGNING_PASSWORD secret is empty or not set"
+            exit 1
+          fi
+          echo "All signing secrets are configured (lengths: key=${#ORG_GRADLE_PROJECT_signingInMemoryKey}, keyId=${#ORG_GRADLE_PROJECT_signingInMemoryKeyId}, password=${#ORG_GRADLE_PROJECT_signingInMemoryKeyPassword})"
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+
       - name: Publish to Maven Central
-        run: ./gradlew publishAndReleaseToMavenCentral
+        run: ./gradlew publishAndReleaseToMavenCentral --stacktrace
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
