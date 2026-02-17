@@ -663,7 +663,7 @@ Contributions are welcome! Please feel free to submit a [Pull Request](https://g
 ```
 MIT License
 
-Copyright (c) 2025 Livio TINNIRELLO
+Copyright (c) 2026 Livio TINNIRELLO
 ```
 
 See [LICENSE](LICENSE) for full details.
