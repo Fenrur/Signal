@@ -125,7 +125,7 @@ mavenPublishing {
         name.set("Signal")
         description.set("A reactive signal library for Kotlin Multiplatform")
         url.set("https://github.com/fenrur/signal")
-        inceptionYear.set("2025")
+        inceptionYear.set("2026")
 
         licenses {
             license {
